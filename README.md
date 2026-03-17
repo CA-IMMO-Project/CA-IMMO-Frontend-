@@ -1,20 +1,22 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# ST-IMMOBILIER
 
-# Run and deploy your AI Studio app
-
-This contains everything you need to run your app locally.
-
-View your app in AI Studio: https://ai.studio/apps/78b1de48-84a7-436a-82ac-60c5c8122f17
+Site d'agence immobilière moderne pour la vente de terrains, maisons et réservation d'hôtels.
 
 ## Run Locally
 
-**Prerequisites:**  Node.js
-
+**Prerequisites:** Node.js
 
 1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+   ```
+   npm install
+   ```
+2. Run the development server:
+   ```
+   npm run dev
+   ```
+3. Build for production:
+   ```
+   npm run build
+   ```
+
+Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
