@@ -1,17 +1,16 @@
-export type PropertyType = 'house' | 'apartment' | 'land' | 'hotel';
+export type TitleStatus = 'Titre Foncier' | 'Titre en cours' | 'Cadastré';
 
-export interface Property {
+export interface Land {
   id: string;
   title: string;
   description: string;
-  price: number;
+  price: number; // in Ariary (Ar)
+  region: string;
   location: string;
   coordinates?: [number, number]; // [latitude, longitude]
-  type: PropertyType;
   imageUrl: string;
   features: string[];
-  bedrooms?: number;
-  bathrooms?: number;
-  area?: number; // in sq meters
-  status: 'for_sale' | 'for_rent' | 'available' | 'booked';
+  area: number; // in m²
+  titleStatus: TitleStatus;
+  status: 'disponible' | 'réservé' | 'vendu';
 }
