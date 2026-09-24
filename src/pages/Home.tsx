@@ -1,306 +1,388 @@
 import { motion } from 'motion/react';
-import { Search, MapPin, ArrowRight, ShieldCheck, FileCheck, HandCoins, Headset } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import LandCard from '../components/LandCard';
-import { Land } from '../types';
-import { fetchLands, fetchRegions } from '../lib/api';
-import { formatAriary } from '../lib/format';
+import { Link } from 'react-router-dom';
+import type { ReactNode } from 'react';
+import {
+  ArrowRight, Phone, Award, FileCheck, Home as HomeIcon, Users, ShieldCheck, MapPinned,
+  LandPlot, Search, HandCoins, Repeat, Building2, Wallet, Cpu, View, MonitorPlay,
+  Globe, Eye, Star, HeartHandshake, Tag, Ruler,
+} from 'lucide-react';
+import { PHONE_1_TEL } from '../lib/contact';
+
+const IMG_HERO = 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=1800&q=80';
+const IMG_LOTS = 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=80';
+const IMG_AERIAL = 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1400&q=80';
+const IMG_SUNSET = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80';
+
+const fadeUp = {
+  initial: { opacity: 0, y: 24 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, margin: '-60px' },
+  transition: { duration: 0.6, ease: 'easeOut' as const },
+};
+
+function Eyebrow({ children, light = false }: { children: ReactNode; light?: boolean }) {
+  return (
+    <p className={`flex items-center gap-3 text-sm font-semibold mb-3 ${light ? 'text-gold-500' : 'text-navy-900'}`}>
+      <span className="h-[3px] w-7 rounded-full bg-gold-500" />
+      {children}
+    </p>
+  );
+}
+
+function DroneIcon({ className = '', spin = false }: { className?: string; spin?: boolean }) {
+  const rotor = (cx: number) => (
+    <g>
+      <line x1={cx} y1="14" x2={cx} y2="20" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+      <ellipse
+        cx={cx} cy="13" rx="11" ry="1.8" fill="currentColor" opacity={spin ? 0.55 : 1}
+        className={spin ? 'animate-pulse' : undefined}
+      />
+    </g>
+  );
+  return (
+    <svg viewBox="0 0 100 56" className={className} fill="none" aria-hidden>
+      {/* bras */}
+      <path d="M14 20 L38 28 M86 20 L62 28" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+      {rotor(14)}
+      {rotor(86)}
+      {/* corps */}
+      <rect x="34" y="22" width="32" height="14" rx="7" fill="currentColor" />
+      <circle cx="50" cy="29" r="2.5" fill="#f7c325" />
+      {/* nacelle + caméra */}
+      <path d="M44 36 L44 41 M56 36 L56 41" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+      <rect x="42" y="40" width="16" height="10" rx="3" fill="currentColor" />
+      <circle cx="50" cy="45" r="3" fill="#0b1e42" stroke="#f7c325" strokeWidth="1.5" />
+      {/* patins */}
+      <path d="M32 36 L28 46 M68 36 L72 46 M24 46 H34 M66 46 H76" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function GoldButton({ to, children, small = false }: { to: string; children: ReactNode; small?: boolean }) {
+  return (
+    <Link
+      to={to}
+      className={`inline-flex items-center gap-2 rounded-full bg-gold-500 font-semibold text-navy-900 shadow-lg shadow-gold-500/30 transition hover:bg-gold-400 hover:-translate-y-0.5 ${
+        small ? 'px-5 py-2.5 text-xs' : 'px-7 py-3.5 text-sm'
+      }`}
+    >
+      {children} <ArrowRight className="w-4 h-4" />
+    </Link>
+  );
+}
 
 export default function Home() {
-  const navigate = useNavigate();
-  const [query, setQuery] = useState('');
-  const [lands, setLands] = useState<Land[]>([]);
-  const [regions, setRegions] = useState<string[]>([]);
-
-  useEffect(() => {
-    fetchLands().then(setLands).catch(() => setLands([]));
-    fetchRegions().then(setRegions).catch(() => setRegions([]));
-  }, []);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    navigate(`/terrains?q=${encodeURIComponent(query)}`);
-  };
-
-  const featured = lands.filter((l) => l.status === 'disponible').slice(0, 6);
-  const highlight = lands.find((l) => l.region === 'Nosy Be') ?? lands[0];
-
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-brand-900">
-        <div className="absolute inset-0">
-          <img
-            src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=2075&q=80"
-            alt="Terrain à Madagascar"
-            className="w-full h-full object-cover opacity-40"
-            referrerPolicy="no-referrer"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-brand-900 via-brand-900/90 to-brand-900/60" />
+    <div className="font-display overflow-hidden bg-white">
+      {/* ================= HERO ================= */}
+      <section className="relative bg-navy-900 text-white">
+        <div className="absolute inset-y-0 right-0 w-full lg:w-[62%]">
+          <img src={IMG_HERO} alt="Villa avec piscine à Madagascar" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+          <div className="absolute inset-0 bg-gradient-to-r from-navy-900 via-navy-900/70 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-navy-900/80 via-transparent to-transparent" />
         </div>
+        {/* yellow decorative blob */}
+        <svg className="absolute left-0 top-10 w-10 md:w-14 h-28 md:h-36 text-gold-500" viewBox="0 0 60 150" aria-hidden>
+          <path fill="currentColor" d="M0,0 C45,20 60,55 48,80 C38,100 30,110 40,150 C20,120 0,110 0,90 Z" />
+        </svg>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 md:py-36">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div>
-              <motion.span
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="inline-block text-brand-accent text-xs font-semibold uppercase tracking-[0.2em] mb-6"
+        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-20 pb-40 md:pt-24 md:pb-44">
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-xl">
+            <Eyebrow light><span className="text-xl md:text-2xl font-medium">Bienvenue chez</span></Eyebrow>
+            <h1 className="text-5xl md:text-7xl font-extrabold leading-none tracking-tight mb-5">
+              CA <span className="text-gold-500">Immo</span>
+            </h1>
+            <p className="text-xl md:text-2xl font-semibold mb-6">Votre projet immobilier, notre engagement.</p>
+            <p className="text-sm md:text-base text-white/80 leading-relaxed mb-10 max-w-md">
+              Depuis plus de 12 ans, CA Immo vous accompagne dans vos projets immobiliers à Madagascar : achat, vente,
+              recherche de terrain, lotissement et acquisition de maisons clé en main.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <GoldButton to="/terrains">Découvrir nos biens</GoldButton>
+              <a
+                href={PHONE_1_TEL}
+                className="inline-flex items-center gap-2 rounded-full border border-white/60 px-7 py-3.5 text-sm font-medium transition hover:bg-white hover:text-navy-900"
               >
-                Chargé d'Affaire Immobilier
-              </motion.span>
-              <motion.h1
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, ease: 'easeOut' }}
-                className="text-4xl md:text-6xl font-serif text-white mb-6 leading-tight"
-              >
-                Votre terrain <span className="text-brand-accent">vous attend</span> à Madagascar
-              </motion.h1>
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.2 }}
-                className="text-lg text-white/75 mb-10 max-w-xl font-light leading-relaxed"
-              >
-                Nous vous accompagnons dans l'achat de terrains sécurisés à Antananarivo et dans toute l'île — titres vérifiés, démarches simplifiées, prix transparents.
-              </motion.p>
-
-              <motion.form
-                onSubmit={handleSearch}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.35 }}
-                className="bg-white/10 backdrop-blur-md p-2 rounded-full w-full max-w-xl flex flex-col sm:flex-row gap-2 border border-white/20"
-              >
-                <div className="flex-1 flex items-center bg-white rounded-full px-5 py-3.5">
-                  <MapPin className="w-5 h-5 text-brand-900/40 mr-3 shrink-0" />
-                  <input
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Ville, région, quartier..."
-                    className="bg-transparent border-none focus:outline-none w-full text-brand-900 placeholder:text-brand-900/40 font-medium text-sm"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="bg-brand-accent hover:bg-white hover:text-brand-900 text-white px-7 py-3.5 rounded-full font-medium tracking-wide text-sm transition-colors flex items-center justify-center"
-                >
-                  <Search className="w-4 h-4 mr-2" />
-                  Rechercher
-                </button>
-              </motion.form>
-
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="flex flex-wrap gap-2 mt-6"
-              >
-                {regions.slice(0, 5).map((r) => (
-                  <Link
-                    key={r}
-                    to={`/terrains?region=${encodeURIComponent(r)}`}
-                    className="text-xs px-4 py-2 rounded-full border border-white/20 text-white/70 hover:text-brand-900 hover:bg-white transition-colors"
-                  >
-                    {r}
-                  </Link>
-                ))}
-              </motion.div>
+                <Phone className="w-4 h-4" /> Parler à un conseiller
+              </a>
             </div>
+          </motion.div>
 
-            {/* Floating cards */}
-            {highlight && (
-              <div className="relative hidden lg:block h-[480px]">
-                <motion.div
-                  initial={{ opacity: 0, x: 40 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.8, delay: 0.3 }}
-                  className="absolute inset-0 rounded-3xl overflow-hidden shadow-2xl"
-                >
-                  <img
-                    src={highlight.imageUrl}
-                    alt={highlight.title}
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.7 }}
-                  className="absolute -left-8 top-10 bg-white rounded-2xl shadow-xl p-4 w-56"
-                >
-                  <p className="text-xs text-brand-900/50 uppercase tracking-wide mb-1">{highlight.location}</p>
-                  <p className="font-serif text-brand-900 font-semibold">{formatAriary(highlight.price)}</p>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.9 }}
-                  className="absolute -right-6 bottom-14 bg-white rounded-2xl shadow-xl p-4 flex items-center gap-3"
-                >
-                  <FileCheck className="w-8 h-8 text-brand-accent" />
-                  <div>
-                    <p className="text-sm font-semibold text-brand-900">Titre Foncier</p>
-                    <p className="text-xs text-brand-900/50">Vérifié & sécurisé</p>
-                  </div>
-                </motion.div>
+          {/* Feature strip */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.4 }}
+            className="mt-14 lg:absolute lg:right-8 lg:bottom-20 lg:mt-0 grid grid-cols-3 sm:grid-cols-5 gap-y-6 lg:divide-x lg:divide-white/25"
+          >
+            {[
+              { icon: Award, label: '+12 ans\nd’expérience' },
+              { icon: FileCheck, label: 'Terrains\ntitrés' },
+              { icon: HomeIcon, label: 'Maisons\nclé en main' },
+              { icon: Users, label: 'Accompagnement\npersonnalisé' },
+              { icon: ShieldCheck, label: 'Sécurité\nfoncière' },
+            ].map(({ icon: Icon, label }) => (
+              <div key={label} className="flex flex-col items-center text-center px-4 xl:px-6">
+                <Icon className="w-9 h-9 text-gold-500 mb-2" strokeWidth={1.6} />
+                <span className="whitespace-pre-line text-xs font-semibold leading-tight">{label}</span>
               </div>
-            )}
-          </div>
+            ))}
+          </motion.div>
         </div>
+
+        {/* curved bottom */}
+        <svg className="absolute -bottom-px left-0 z-0 block w-full h-20 md:h-32 text-white" viewBox="0 0 1440 140" preserveAspectRatio="none" aria-hidden>
+          <path fill="currentColor" d="M0,0 C20,90 110,128 330,132 C760,138 1180,128 1440,110 L1440,142 L0,142 Z" />
+        </svg>
       </section>
 
-      {/* Trust bar */}
-      <section className="bg-white border-b border-brand-900/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-2 md:grid-cols-4 gap-8">
-          {[
-            { icon: <FileCheck className="w-6 h-6" />, title: 'Titres vérifiés', desc: 'Sécurité juridique' },
-            { icon: <HandCoins className="w-6 h-6" />, title: 'Prix transparents', desc: 'Sans frais cachés' },
-            { icon: <ShieldCheck className="w-6 h-6" />, title: 'Accompagnement', desc: "De A à Z" },
-            { icon: <Headset className="w-6 h-6" />, title: 'Support dédié', desc: 'Réponse rapide' },
-          ].map((item, idx) => (
-            <div key={idx} className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-brand-50 text-brand-accent flex items-center justify-center shrink-0">
-                {item.icon}
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-brand-900">{item.title}</p>
-                <p className="text-xs text-brand-900/50">{item.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Offre du moment */}
-      <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center bg-brand-50 rounded-3xl overflow-hidden shadow-xl shadow-brand-900/5">
-            <motion.img
-              initial={{ opacity: 0, scale: 1.02 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7 }}
-              src="/domaine-laceo-vontovorona.jpeg"
-              alt="Domaine Lacéo Vontovorona - offre de terrains"
-              className="w-full h-full object-cover max-h-[520px] lg:max-h-none"
+      {/* ================= EN QUELQUES MOTS ================= */}
+      <section className="relative bg-white py-16 md:py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid gap-12 lg:grid-cols-12 items-center">
+          <motion.div {...fadeUp} className="lg:col-span-4 relative mx-auto w-full max-w-sm">
+            <div className="absolute -left-4 top-6 bottom-0 right-10 rounded-[2rem] bg-gold-500 -rotate-6" />
+            <img
+              src={IMG_LOTS}
+              alt="Lotissement vu du ciel"
+              className="relative h-72 w-full rounded-[2rem] object-cover shadow-2xl -rotate-3 border-4 border-white"
               referrerPolicy="no-referrer"
             />
-            <div className="p-10 md:p-14">
-              <span className="inline-block text-brand-accent text-xs font-semibold uppercase tracking-[0.2em] mb-4">
-                Offre du moment
-              </span>
-              <h2 className="text-3xl md:text-4xl font-serif text-brand-900 mb-4">Domaine Lacéo Vontovorona</h2>
-              <p className="text-brand-900/70 font-light leading-relaxed mb-8">
-                Posséder un terrain, c'est garantir l'avenir des générations futures. Des lots de 500 m² à 1000 m² avec titre foncier en main, dans un cadre calme proche du lac.
-              </p>
-              <ul className="space-y-3 mb-10">
-                {[
-                  '04 lots disponibles, de 500 m² à 1000 m²',
-                  'Titre foncier en main',
-                  'Facilité de paiement en 12 mois',
-                ].map((item) => (
-                  <li key={item} className="flex items-center text-brand-900 font-medium text-sm">
-                    <div className="w-2 h-2 bg-brand-accent rounded-full mr-3 shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                to="/reservation?project=Domaine%20Lac%C3%A9o%20Vontovorona"
-                className="inline-flex items-center justify-center px-8 py-4 bg-brand-accent hover:bg-brand-900 text-white rounded-full font-medium uppercase tracking-widest text-sm transition-colors"
+          </motion.div>
+
+          <motion.div {...fadeUp} className="lg:col-span-5">
+            <Eyebrow>CA Immo en quelques mots</Eyebrow>
+            <h2 className="text-3xl md:text-4xl font-bold text-navy-900 leading-tight mb-6">
+              Une expertise immobilière au service de vos projets
+            </h2>
+            <p className="text-sm text-slate-600 leading-relaxed mb-4">
+              CA Immo est <strong className="text-navy-900">une entreprise immobilière avec plus de 12 ans d’expérience</strong>,
+              spécialisée dans les projets immobiliers à Madagascar. Nous vous accompagnons dans l’achat et la vente de terrains,
+              le lotissement, la recherche de biens spécifiques et les projets de maisons clé en main.
+            </p>
+            <p className="text-sm text-slate-600 leading-relaxed mb-8">
+              Notre priorité est de vous proposer une solution adaptée à vos besoins, votre budget et vos attentes, tout en
+              garantissant la qualité de nos prestations et votre satisfaction.
+            </p>
+            <GoldButton to="/about" small>Découvrir notre entreprise</GoldButton>
+          </motion.div>
+
+          <motion.div {...fadeUp} className="lg:col-span-3 rounded-3xl bg-mist p-7 shadow-sm">
+            <h3 className="font-bold text-navy-900 mb-5">
+              <span className="text-gold-500">N</span>os solutions
+            </h3>
+            <ul className="space-y-4">
+              {[
+                { icon: FileCheck, label: 'Terrain titré' },
+                { icon: LandPlot, label: 'Lotissement' },
+                { icon: HomeIcon, label: 'Maison clé en main' },
+                { icon: Search, label: 'Recherche personnalisée' },
+                { icon: HandCoins, label: 'Vente de terrain' },
+              ].map(({ icon: Icon, label }) => (
+                <li key={label} className="flex items-center gap-4 text-sm text-navy-900">
+                  <Icon className="w-5 h-5 text-gold-600" /> {label}
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ================= OBJECTIF ================= */}
+      <section className="relative bg-mist py-16 md:py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid gap-10 lg:grid-cols-12 items-center">
+          <motion.div {...fadeUp} className="lg:col-span-4">
+            <Eyebrow>Notre objectif</Eyebrow>
+            <h2 className="text-3xl font-bold text-navy-900 leading-tight mb-5">Vous accompagner dans vos projets immobiliers</h2>
+            <p className="text-sm text-slate-600 leading-relaxed mb-8">
+              Que vous souhaitiez acheter, vendre ou trouver un terrain sur mesure, nous sommes là pour vous guider et vous
+              apporter des solutions adaptées à vos besoins.
+            </p>
+            <GoldButton to="/contact" small>En savoir plus</GoldButton>
+          </motion.div>
+
+          <div className="lg:col-span-8 grid gap-5 sm:grid-cols-3">
+            {[
+              { icon: HomeIcon, bg: 'bg-navy-900 text-white', title: 'Vous souhaitez acheter ?', text: 'Nous vous aidons à trouver le bien ou le terrain qui correspond à vos besoins et à vos moyens.' },
+              { icon: Repeat, bg: 'bg-gold-500 text-navy-900', title: 'Vous souhaitez vendre ?', text: 'Nous vous accompagnons dans la mise en valeur de votre bien et dans toutes les démarches liées à la vente.' },
+              { icon: Search, bg: 'bg-navy-900 text-white', title: 'Vous recherchez un terrain précis ?', text: 'Donnez-nous vos critères : emplacement, superficie, budget, accessibilité, environnement… Nous recherchons pour vous.' },
+            ].map(({ icon: Icon, bg, title, text }, i) => (
+              <motion.div
+                key={title}
+                {...fadeUp}
+                transition={{ ...fadeUp.transition, delay: i * 0.1 }}
+                className="rounded-2xl bg-white p-6 shadow-lg shadow-navy-900/5 transition hover:-translate-y-1 hover:shadow-xl"
               >
-                Réserver un lot <ArrowRight className="w-4 h-4 ml-2" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Regions / Categories */}
-      <section className="py-24 bg-brand-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-end justify-between mb-12">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-serif text-brand-900 mb-3">Nos régions</h2>
-              <p className="text-brand-900/60 font-light">Des opportunités foncières dans toute Madagascar.</p>
-            </div>
-            <Link to="/terrains" className="hidden md:flex items-center text-sm font-medium text-brand-accent hover:text-brand-900 transition-colors">
-              Toutes les régions <ArrowRight className="w-4 h-4 ml-2" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {regions.map((r) => {
-              const sample = lands.find((l) => l.region === r);
-              return (
-                <Link
-                  key={r}
-                  to={`/terrains?region=${encodeURIComponent(r)}`}
-                  className="group relative h-40 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow"
-                >
-                  <img
-                    src={sample?.imageUrl}
-                    alt={r}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="absolute inset-0 bg-brand-900/50 group-hover:bg-brand-900/60 transition-colors" />
-                  <span className="absolute bottom-4 left-4 text-white font-serif text-lg">{r}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Featured lands */}
-      <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-end justify-between mb-12">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-serif text-brand-900 mb-3">Terrains à la une</h2>
-              <p className="text-brand-900/60 font-light">Une sélection de parcelles disponibles dès maintenant.</p>
-            </div>
-            <Link to="/terrains" className="hidden md:flex items-center text-sm font-medium text-brand-accent hover:text-brand-900 transition-colors">
-              Voir tous les terrains <ArrowRight className="w-4 h-4 ml-2" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featured.map((land) => (
-              <LandCard key={land.id} land={land} />
+                <div className={`mb-5 flex h-12 w-12 items-center justify-center rounded-full ${bg}`}>
+                  <Icon className="w-5 h-5" />
+                </div>
+                <h3 className="font-bold text-navy-900 mb-3 leading-snug">{title}</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">{text}</p>
+              </motion.div>
             ))}
           </div>
+        </div>
+      </section>
 
-          <div className="mt-12 text-center md:hidden">
-            <Link to="/terrains" className="inline-flex items-center justify-center px-8 py-4 border border-brand-900 text-brand-900 hover:bg-brand-900 hover:text-white transition-colors duration-300 rounded-full uppercase tracking-widest text-sm font-medium">
-              Voir tous les terrains
-            </Link>
+      {/* ================= POURQUOI ================= */}
+      <section className="relative bg-navy-900 text-white pt-24 pb-28 md:pt-28 md:pb-36">
+        <svg className="absolute -top-px left-0 block w-full h-12 md:h-16 text-mist" viewBox="0 0 1440 70" preserveAspectRatio="none" aria-hidden>
+          <path fill="currentColor" d="M0,-2 L1440,-2 L1440,0 C1400,0 1380,70 1280,70 L0,70 Z" />
+        </svg>
+        <svg className="absolute -bottom-px left-0 block w-full h-24 md:h-40" viewBox="0 0 1440 160" preserveAspectRatio="none" aria-hidden>
+          <path className="text-gold-500" fill="currentColor" d="M820,160 C1080,140 1290,90 1440,0 L1440,160 Z" />
+          <path fill="#ffffff" d="M0,120 C420,168 1000,150 1440,70 L1440,162 L0,162 Z" />
+        </svg>
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid gap-12 lg:grid-cols-12">
+          <motion.div {...fadeUp} className="lg:col-span-4">
+            <Eyebrow light>Pourquoi choisir CA Immo ?</Eyebrow>
+            <h2 className="text-3xl md:text-4xl font-bold leading-tight">
+              Plus qu’un bien immobilier, un <span className="text-gold-500">accompagnement sécurisé</span>
+            </h2>
+          </motion.div>
+          <div className="lg:col-span-8 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { icon: Award, title: '12+ ans d’expérience', text: 'Une expérience solide dans le secteur immobilier.' },
+              { icon: ShieldCheck, title: 'Sécurité foncière', text: 'Des démarches encadrées et une attention particulière à la sécurisation des biens.' },
+              { icon: Building2, title: 'Accompagnement administratif', text: 'Nous vous guidons dans toutes les démarches liées à votre projet.' },
+              { icon: Ruler, title: 'Notaire & géomètre', text: 'Des professionnels compétents pour renforcer la sécurité de votre acquisition.' },
+              { icon: Wallet, title: 'Solutions de paiement', text: 'Des modalités adaptées selon votre projet et les négociations.' },
+              { icon: Cpu, title: 'Technologie & innovation', text: 'Drones, visite virtuelle et outils numériques pour découvrir un bien où que vous soyez.' },
+            ].map(({ icon: Icon, title, text }) => (
+              <motion.div key={title} {...fadeUp}>
+                <Icon className="w-8 h-8 text-gold-500 mb-3" strokeWidth={1.6} />
+                <h3 className="font-semibold mb-2">{title}</h3>
+                <p className="text-xs text-white/65 leading-relaxed">{text}</p>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* CTA banner */}
-      <section className="py-20 bg-brand-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="rounded-3xl bg-gradient-to-r from-brand-accent to-brand-accent/80 p-10 md:p-16 flex flex-col md:flex-row items-center justify-between gap-8">
-            <div>
-              <h3 className="text-2xl md:text-3xl font-serif text-white mb-3">Prêt à sécuriser votre terrain ?</h3>
-              <p className="text-white/85 font-light max-w-xl">Contactez-nous dès aujourd'hui pour réserver une parcelle ou obtenir un accompagnement personnalisé.</p>
+      {/* ================= A DISTANCE ================= */}
+      <section className="relative bg-white">
+        <div className="mx-auto max-w-7xl grid lg:grid-cols-2 items-center">
+          <motion.div {...fadeUp} className="px-4 sm:px-6 lg:px-8 py-16 md:py-20">
+            <Eyebrow>L’immobilier, même à distance</Eyebrow>
+            <h2 className="text-3xl font-bold text-navy-900 leading-tight mb-4">
+              Vous êtes à l’étranger ?<br />Votre projet reste à portée de main.
+            </h2>
+            <p className="text-sm text-slate-600 leading-relaxed mb-8 max-w-md">
+              Grâce à nos technologies, découvrez un terrain ou une propriété à Madagascar depuis où que vous soyez.
+            </p>
+            <div className="flex flex-wrap gap-4 mb-10">
+              {[
+                { icon: ({ className }: { className?: string }) => <DroneIcon className={className} />, label: 'Drone' },
+                { icon: View, label: 'Visite virtuelle' },
+                { icon: MonitorPlay, label: 'Présentation à distance' },
+              ].map(({ icon: Icon, label }) => (
+                <div key={label} className="flex items-center gap-3 rounded-full bg-mist pl-2 pr-5 py-2 shadow-sm">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-navy-900 shadow">
+                    <Icon className="w-5 h-5" />
+                  </span>
+                  <span className="text-xs font-semibold text-navy-900">{label}</span>
+                </div>
+              ))}
             </div>
-            <Link
-              to="/reservation"
-              className="shrink-0 inline-flex items-center justify-center px-8 py-4 bg-white text-brand-900 rounded-full font-medium uppercase tracking-widest text-sm hover:bg-brand-900 hover:text-white transition-colors"
+            <GoldButton to="/terrains" small>Voir nos solutions</GoldButton>
+          </motion.div>
+
+          <motion.div {...fadeUp} className="relative h-80 lg:h-full min-h-[380px]">
+            <img src={IMG_AERIAL} alt="Vue aérienne par drone" className="absolute inset-0 h-full w-full object-cover" referrerPolicy="no-referrer" />
+            <div className="absolute inset-0 bg-gradient-to-r from-white via-white/20 to-transparent" />
+            {/* Drones en vol */}
+            <motion.div
+              className="absolute left-[8%] top-[10%] w-32 md:w-40 text-navy-950 drop-shadow-[0_12px_12px_rgba(7,22,52,0.45)]"
+              animate={{ y: [0, -14, 0], rotate: [-3, 2, -3] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
             >
-              Réserver maintenant
+              <DroneIcon spin className="w-full h-auto" />
+            </motion.div>
+            <motion.div
+              className="absolute left-[40%] bottom-[12%] w-16 md:w-20 text-navy-900/90 drop-shadow-[0_8px_8px_rgba(7,22,52,0.4)]"
+              animate={{ x: [0, 24, 0], y: [0, -8, 0], rotate: [2, -3, 2] }}
+              transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <DroneIcon spin className="w-full h-auto" />
+            </motion.div>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 w-60 rounded-3xl rounded-bl-none bg-navy-900 p-6 text-white shadow-2xl">
+              <Globe className="w-8 h-8 text-gold-500 mb-4" strokeWidth={1.6} />
+              <p className="font-semibold leading-snug">
+                Votre projet immobilier à Madagascar, <span className="text-gold-500">où que vous soyez.</span>
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ================= ENGAGEMENTS ================= */}
+      <section className="bg-mist py-16 md:py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid gap-10 lg:grid-cols-12 items-center">
+          <motion.div {...fadeUp} className="lg:col-span-3">
+            <Eyebrow>Nos engagements</Eyebrow>
+            <h2 className="text-2xl md:text-3xl font-bold text-navy-900 leading-tight">
+              Nous nous engageons à vous accompagner avec transparence
+            </h2>
+          </motion.div>
+          <div className="lg:col-span-9 grid gap-4 grid-cols-2 md:grid-cols-5">
+            {[
+              { icon: ShieldCheck, title: 'Sécurisation', text: 'Une attention particulière à la situation foncière et administrative.' },
+              { icon: Eye, title: 'Transparence', text: 'Des informations claires sur les biens, les conditions et les engagements.' },
+              { icon: Star, title: 'Qualité', text: 'Des solutions correspondant à vos critères et à vos attentes.' },
+              { icon: HeartHandshake, title: 'Satisfaction', text: 'Un suivi sérieux et le respect des engagements convenus.' },
+              { icon: Tag, title: 'Prix & négociation', text: 'Des offres compétitives et négociables selon les projets.' },
+            ].map(({ icon: Icon, title, text }) => (
+              <motion.div key={title} {...fadeUp} className="rounded-2xl bg-white p-5 shadow-md shadow-navy-900/5 transition hover:-translate-y-1">
+                <span className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-navy-900 text-gold-500">
+                  <Icon className="w-5 h-5" />
+                </span>
+                <h3 className="text-sm font-bold text-navy-900 mb-2">{title}</h3>
+                <p className="text-[11px] text-slate-500 leading-relaxed">{text}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ================= CTA ================= */}
+      <section className="relative text-white">
+        <img src={IMG_SUNSET} alt="Paysage de Madagascar" className="absolute inset-0 h-full w-full object-cover" referrerPolicy="no-referrer" />
+        <div className="absolute inset-0 bg-gradient-to-r from-navy-950 via-navy-900/85 to-navy-900/30" />
+        <svg className="absolute -top-px left-0 block w-full h-10 md:h-16" viewBox="0 0 1440 70" preserveAspectRatio="none" aria-hidden>
+          <path fill="#f3f6fb" d="M0,-2 L1440,-2 L1440,10 C1000,50 500,60 0,40 Z" />
+          <path className="text-gold-500" fill="currentColor" d="M0,40 C60,42 110,45 150,48 C110,58 50,66 0,70 Z" />
+        </svg>
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 md:py-24 flex flex-col lg:flex-row lg:items-center gap-10 justify-between">
+          <motion.div {...fadeUp}>
+            <Eyebrow light>Vous avez un projet immobilier ?</Eyebrow>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Acheter <span className="text-gold-500">•</span> Vendre <span className="text-gold-500">•</span> Construire{' '}
+              <span className="text-gold-500">•</span> Investir
+            </h2>
+            <p className="text-sm text-white/80 max-w-md leading-relaxed">
+              Parlez-nous de votre projet. Notre équipe vous accompagne pour trouver une solution adaptée à vos besoins et à votre budget.
+            </p>
+          </motion.div>
+          <motion.div {...fadeUp} className="flex flex-wrap gap-3">
+            <GoldButton to="/reservation" small>J’ai un projet</GoldButton>
+            <Link to="/terrains" className="inline-flex items-center gap-2 rounded-full border border-white/60 px-5 py-2.5 text-xs font-medium transition hover:bg-white hover:text-navy-900">
+              Voir nos terrains <ArrowRight className="w-4 h-4" />
             </Link>
+            <Link to="/contact" className="inline-flex items-center gap-2 rounded-full border border-white/60 px-5 py-2.5 text-xs font-medium transition hover:bg-white hover:text-navy-900">
+              <Phone className="w-4 h-4" /> Nous contacter
+            </Link>
+          </motion.div>
+        </div>
+        <svg className="absolute -bottom-px left-0 block w-full h-10 md:h-14" viewBox="0 0 1440 60" preserveAspectRatio="none" aria-hidden>
+          <path className="text-gold-500" fill="currentColor" d="M0,20 C300,62 700,60 1040,34 L1040,62 L0,62 Z" />
+          <path fill="#0b1e42" d="M0,40 C300,70 700,66 1040,48 L1040,62 L0,62 Z" />
+        </svg>
+        <div className="relative flex justify-end">
+          <div className="flex items-center gap-3 rounded-tl-[3.5rem] bg-navy-950 pl-10 pr-8 md:pr-12 pt-7 pb-6 text-white">
+            <MapPinned className="w-7 h-7 text-gold-500" />
+            <div>
+              <p className="font-extrabold text-xl leading-none">CA <span className="text-gold-500">IMMO</span></p>
+              <p className="text-[10px] text-white/70">Trouvez. Sécurisez. Accompagnez.</p>
+            </div>
           </div>
         </div>
       </section>

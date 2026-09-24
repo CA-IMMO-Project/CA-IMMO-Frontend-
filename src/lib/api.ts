@@ -1,23 +1,12 @@
 import { Land } from '../types';
+import { LANDS } from '../data/lands';
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000';
-
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
-
-  if (!res.ok) {
-    const body = await res.json().catch(() => null);
-    const message = body?.errors
-      ? Object.values(body.errors as Record<string, string>).join(' ')
-      : (body?.error ?? "Une erreur est survenue. Merci de réessayer.");
-    throw new Error(message);
-  }
-
-  return res.json();
-}
+const USAGE_KEYWORDS: Record<string, string[]> = {
+  residentiel: ['résidentiel', 'résidence', 'villa', 'famille'],
+  agricole: ['agricole', 'agriculture', 'fertile', 'culture'],
+  commercial: ['commercial', 'commerce', 'boutique'],
+  touristique: ['touristique', 'tourisme', 'hôtelier', 'plage', 'vue mer', 'bord de mer'],
+};
 
 export interface LandFilters {
   q?: string;
@@ -28,20 +17,26 @@ export interface LandFilters {
   titleStatus?: string;
 }
 
-export function fetchLands(filters: LandFilters = {}): Promise<Land[]> {
-  const params = new URLSearchParams();
-  if (filters.q) params.set('q', filters.q);
-  if (filters.region) params.set('region', filters.region);
-  if (filters.maxPrice) params.set('maxPrice', String(filters.maxPrice));
-  if (filters.minArea) params.set('minArea', String(filters.minArea));
-  if (filters.usage) params.set('usage', filters.usage);
-  if (filters.titleStatus) params.set('titleStatus', filters.titleStatus);
-  const qs = params.toString();
-  return request<Land[]>(`/api/lands${qs ? `?${qs}` : ''}`);
+export async function fetchLands(filters: LandFilters = {}): Promise<Land[]> {
+  const q = filters.q?.toLowerCase();
+  const keywords = filters.usage ? USAGE_KEYWORDS[filters.usage] : undefined;
+
+  return LANDS.filter((land) => {
+    if (q && !land.title.toLowerCase().includes(q) && !land.location.toLowerCase().includes(q)) return false;
+    if (filters.region && land.region !== filters.region) return false;
+    if (filters.maxPrice && land.price > filters.maxPrice) return false;
+    if (filters.minArea && land.area < filters.minArea) return false;
+    if (filters.titleStatus && land.titleStatus !== filters.titleStatus) return false;
+    if (keywords) {
+      const text = `${land.title} ${land.description}`.toLowerCase();
+      if (!keywords.some((k) => text.includes(k))) return false;
+    }
+    return true;
+  });
 }
 
-export function fetchRegions(): Promise<string[]> {
-  return request<string[]>('/api/regions');
+export async function fetchRegions(): Promise<string[]> {
+  return [...new Set(LANDS.map((land) => land.region))].sort();
 }
 
 export interface ReservationPayload {
@@ -58,12 +53,8 @@ export interface ReservationPayload {
   projectName?: string;
 }
 
-export function createReservation(payload: ReservationPayload) {
-  return request('/api/reservations', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
-}
+// Pas de backend : les demandes ne sont envoyées nulle part pour l'instant.
+export async function createReservation(_payload: ReservationPayload): Promise<void> {}
 
 export interface ContactPayload {
   firstName: string;
@@ -74,9 +65,4 @@ export interface ContactPayload {
   message: string;
 }
 
-export function createContactMessage(payload: ContactPayload) {
-  return request('/api/contact', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
-}
+export async function createContactMessage(_payload: ContactPayload): Promise<void> {}
