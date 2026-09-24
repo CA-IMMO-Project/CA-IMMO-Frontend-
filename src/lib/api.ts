@@ -1,5 +1,5 @@
 import { Land } from '../types';
-import { LANDS } from '../data/lands';
+import { getLands, addReservation, addMessage } from './store';
 
 const USAGE_KEYWORDS: Record<string, string[]> = {
   residentiel: ['résidentiel', 'résidence', 'villa', 'famille'],
@@ -21,7 +21,7 @@ export async function fetchLands(filters: LandFilters = {}): Promise<Land[]> {
   const q = filters.q?.toLowerCase();
   const keywords = filters.usage ? USAGE_KEYWORDS[filters.usage] : undefined;
 
-  return LANDS.filter((land) => {
+  return getLands().filter((land) => {
     if (q && !land.title.toLowerCase().includes(q) && !land.location.toLowerCase().includes(q)) return false;
     if (filters.region && land.region !== filters.region) return false;
     if (filters.maxPrice && land.price > filters.maxPrice) return false;
@@ -36,7 +36,7 @@ export async function fetchLands(filters: LandFilters = {}): Promise<Land[]> {
 }
 
 export async function fetchRegions(): Promise<string[]> {
-  return [...new Set(LANDS.map((land) => land.region))].sort();
+  return [...new Set(getLands().map((land) => land.region))].sort();
 }
 
 export interface ReservationPayload {
@@ -49,12 +49,14 @@ export interface ReservationPayload {
   age?: number;
   nationality?: string;
   message?: string;
-  landId?: number;
+  landId?: string;
   projectName?: string;
 }
 
-// Pas de backend : les demandes ne sont envoyées nulle part pour l'instant.
-export async function createReservation(_payload: ReservationPayload): Promise<void> {}
+// Pas de backend : les demandes sont stockées localement et visibles dans le backoffice.
+export async function createReservation(payload: ReservationPayload): Promise<void> {
+  addReservation(payload);
+}
 
 export interface ContactPayload {
   firstName: string;
@@ -65,4 +67,6 @@ export interface ContactPayload {
   message: string;
 }
 
-export async function createContactMessage(_payload: ContactPayload): Promise<void> {}
+export async function createContactMessage(payload: ContactPayload): Promise<void> {
+  addMessage(payload);
+}

@@ -56,7 +56,7 @@ export default function Reservation() {
         age: age ? Number(age) : undefined,
         nationality: nationality || undefined,
         message: message || undefined,
-        landId: selectedLand ? Number(selectedLand) : undefined,
+        landId: selectedLand || undefined,
         projectName: project ?? undefined,
       });
       setIsSubmitted(true);
