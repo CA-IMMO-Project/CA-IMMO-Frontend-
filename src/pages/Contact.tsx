@@ -3,6 +3,13 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Phone, MapPin, Send, CheckCircle, X, Facebook, Clock } from 'lucide-react';
 import { FB_URL, PHONE_1, PHONE_1_TEL, PHONE_2, PHONE_2_TEL } from '../lib/contact';
 import { createContactMessage } from '../lib/api';
+import Hero from '../espace/Hero';
+
+const IMG_CONTACT = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80';
+
+const field =
+  'w-full px-4 py-3 bg-mist border border-navy-900/10 rounded-xl text-sm text-navy-900 placeholder-navy-900/40 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition';
+const label = 'block text-sm font-semibold text-navy-900 mb-2';
 
 export default function Contact() {
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -30,183 +37,164 @@ export default function Contact() {
       setMessage('');
       setTimeout(() => setIsSubmitted(false), 5000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue. Merci de réessayer.");
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue. Merci de réessayer.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const infos = [
+    { icon: MapPin, title: 'Zone d’intervention', body: <>Antananarivo et toute Madagascar</> },
+    {
+      icon: Phone,
+      title: 'Téléphone',
+      body: (
+        <>
+          <a href={PHONE_1_TEL} className="block hover:text-gold-600 transition-colors">{PHONE_1}</a>
+          <a href={PHONE_2_TEL} className="block hover:text-gold-600 transition-colors">{PHONE_2}</a>
+        </>
+      ),
+    },
+    { icon: Facebook, title: 'Facebook', body: <a href={FB_URL} target="_blank" rel="noopener noreferrer" className="hover:text-gold-600 transition-colors">CA IMMO</a> },
+    { icon: Clock, title: 'Disponibilité', body: <>Lun-Sam, 8h-18h</> },
+  ];
+
   return (
-    <div className="bg-brand-50 min-h-screen py-32">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-20">
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-5xl font-serif text-brand-900 mb-6 tracking-wide"
+    <div className="font-display bg-white">
+      <Hero
+        crumb="Nous contacter"
+        pill="Parlons de votre projet"
+        title="Nous"
+        highlight="contacter"
+        text="Une question sur un terrain, un titre foncier, une vente ou une recherche ? Notre équipe vous répond rapidement."
+        image={IMG_CONTACT}
+      >
+        <div className="flex flex-wrap gap-4">
+          <a
+            href={PHONE_1_TEL}
+            className="inline-flex items-center gap-2 rounded-full bg-gold-500 px-7 py-3.5 text-sm font-semibold text-navy-900 shadow-lg shadow-gold-500/30 transition hover:bg-gold-400 hover:-translate-y-0.5"
           >
-            Contactez-nous
-          </motion.h1>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1 }}
-            className="w-24 h-1 bg-brand-accent mx-auto mb-6"
-          />
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-lg text-brand-900/70 font-light max-w-2xl mx-auto leading-relaxed"
-          >
-            Une question sur un terrain, un titre foncier ou une réservation ? Notre équipe vous répond rapidement.
-          </motion.p>
+            <Phone className="w-4 h-4" /> Appeler maintenant
+          </a>
         </div>
+      </Hero>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
-          {/* Contact Info */}
-          <div className="lg:col-span-1 space-y-8">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-              className="bg-white p-10 rounded-3xl shadow-xl shadow-brand-900/5 border border-brand-900/5"
-            >
-              <h3 className="text-2xl font-serif text-brand-900 mb-8">Informations</h3>
-              <div className="space-y-8">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 w-14 h-14 bg-brand-50 rounded-full flex items-center justify-center text-brand-accent">
-                    <MapPin className="w-6 h-6" />
-                  </div>
-                  <div className="ml-5">
-                    <p className="text-sm font-medium text-brand-900 uppercase tracking-wider">Zone d'intervention</p>
-                    <p className="text-sm text-brand-900/70 font-light mt-2 leading-relaxed">Antananarivo et toute Madagascar</p>
-                  </div>
-                </div>
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 w-14 h-14 bg-brand-50 rounded-full flex items-center justify-center text-brand-accent">
-                    <Phone className="w-6 h-6" />
-                  </div>
-                  <div className="ml-5">
-                    <p className="text-sm font-medium text-brand-900 uppercase tracking-wider">Téléphone</p>
-                    <a href={PHONE_1_TEL} className="text-sm text-brand-900/70 font-light mt-2 block hover:text-brand-accent transition-colors">{PHONE_1}</a>
-                    <a href={PHONE_2_TEL} className="text-sm text-brand-900/70 font-light mt-1 block hover:text-brand-accent transition-colors">{PHONE_2}</a>
-                  </div>
-                </div>
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 w-14 h-14 bg-brand-50 rounded-full flex items-center justify-center text-brand-accent">
-                    <Facebook className="w-6 h-6" />
-                  </div>
-                  <div className="ml-5">
-                    <p className="text-sm font-medium text-brand-900 uppercase tracking-wider">Facebook</p>
-                    <a href={FB_URL} target="_blank" rel="noopener noreferrer" className="text-sm text-brand-900/70 font-light mt-2 block hover:text-brand-accent transition-colors">
-                      CA IMMO
-                    </a>
-                  </div>
-                </div>
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 w-14 h-14 bg-brand-50 rounded-full flex items-center justify-center text-brand-accent">
-                    <Clock className="w-6 h-6" />
-                  </div>
-                  <div className="ml-5">
-                    <p className="text-sm font-medium text-brand-900 uppercase tracking-wider">Disponibilité</p>
-                    <p className="text-sm text-brand-900/70 font-light mt-2">Lun-Sam, 8h-18h</p>
-                  </div>
-                </div>
-              </div>
-
-              <a
-                href={PHONE_1_TEL}
-                className="mt-10 w-full inline-flex items-center justify-center bg-brand-accent hover:bg-brand-900 text-white font-medium py-4 px-8 rounded-full transition-all duration-300"
-              >
-                <Phone className="w-5 h-5 mr-3" />
-                Appeler maintenant
-              </a>
-            </motion.div>
-          </div>
-
-          {/* Contact Form */}
+      <section className="bg-mist py-16 md:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Coordonnées */}
           <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-            className="lg:col-span-2 bg-white p-10 md:p-12 rounded-3xl shadow-xl shadow-brand-900/5 border border-brand-900/5 relative"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="space-y-4"
           >
+            <p className="flex items-center gap-3 text-sm font-semibold text-navy-900">
+              <span className="h-[3px] w-7 rounded-full bg-gold-500" /> Nos coordonnées
+            </p>
+            <h2 className="text-2xl md:text-3xl font-extrabold text-navy-900 tracking-tight">Une équipe à votre écoute</h2>
+            <div className="space-y-3 pt-2">
+              {infos.map(({ icon: Icon, title, body }) => (
+                <div key={title} className="flex items-start gap-4 rounded-2xl bg-white p-5 shadow-xl shadow-navy-900/5 border border-navy-900/5">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gold-500/15 text-gold-600">
+                    <Icon className="w-5 h-5" />
+                  </span>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-navy-900/60">{title}</p>
+                    <div className="mt-1 text-sm font-medium text-navy-900">{body}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Formulaire */}
+          <motion.div
+            id="formulaire"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="lg:col-span-2 relative rounded-2xl bg-white p-6 sm:p-10 shadow-xl shadow-navy-900/5 border border-navy-900/5 scroll-mt-24"
+          >
+            <p className="flex items-center gap-3 text-sm font-semibold text-navy-900">
+              <span className="h-[3px] w-7 rounded-full bg-gold-500" /> Formulaire de contact
+            </p>
+            <h2 className="mt-2 mb-8 text-2xl md:text-3xl font-extrabold text-navy-900 tracking-tight">Envoyez-nous un message</h2>
+
             <AnimatePresence>
               {isSubmitted && (
                 <motion.div
-                  initial={{ opacity: 0, y: -20 }}
+                  initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="absolute top-0 left-0 right-0 -mt-20 bg-emerald-50 border border-emerald-200 text-emerald-800 px-6 py-4 rounded-2xl flex items-center justify-between shadow-lg shadow-emerald-900/5"
+                  exit={{ opacity: 0, y: -10 }}
+                  className="mb-6 flex items-center justify-between gap-3 rounded-xl border border-gold-500 bg-gold-400/15 px-5 py-4 text-navy-900"
                 >
-                  <div className="flex items-center">
-                    <CheckCircle className="w-6 h-6 text-emerald-500 mr-3" />
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-6 h-6 text-gold-600 shrink-0" />
                     <div>
-                      <p className="font-medium">Message envoyé avec succès !</p>
-                      <p className="text-sm text-emerald-700/80 font-light mt-0.5">Notre équipe vous contactera dans les plus brefs délais.</p>
+                      <p className="font-semibold">Message envoyé avec succès !</p>
+                      <p className="text-sm text-navy-900/70">Notre équipe vous contactera dans les plus brefs délais.</p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setIsSubmitted(false)}
-                    className="text-emerald-600 hover:text-emerald-800 transition-colors p-2 rounded-full hover:bg-emerald-100"
-                  >
+                  <button onClick={() => setIsSubmitted(false)} className="rounded-full p-2 hover:bg-gold-400/30" aria-label="Fermer">
                     <X className="w-5 h-5" />
                   </button>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {error && (
-              <div className="mb-6 px-5 py-4 rounded-xl bg-red-50 text-red-700 text-sm">{error}</div>
-            )}
+            {error && <div className="mb-6 px-5 py-4 rounded-xl bg-red-50 text-red-700 text-sm">{error}</div>}
 
-            <form className="space-y-8" onSubmit={handleSubmit}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-brand-900 mb-3">Prénom</label>
-                  <input type="text" id="firstName" required value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full px-5 py-4 bg-brand-50 border border-brand-900/10 rounded-xl focus:ring-2 focus:ring-brand-accent focus:border-brand-accent transition-all duration-300 font-light text-brand-900 placeholder-brand-900/40" placeholder="Rakoto" />
+                  <label htmlFor="firstName" className={label}>Prénom</label>
+                  <input type="text" id="firstName" required value={firstName} onChange={(e) => setFirstName(e.target.value)} className={field} placeholder="Rakoto" />
                 </div>
                 <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-brand-900 mb-3">Nom</label>
-                  <input type="text" id="lastName" required value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full px-5 py-4 bg-brand-50 border border-brand-900/10 rounded-xl focus:ring-2 focus:ring-brand-accent focus:border-brand-accent transition-all duration-300 font-light text-brand-900 placeholder-brand-900/40" placeholder="Andrianina" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-brand-900 mb-3">Téléphone</label>
-                  <input type="tel" id="phone" required value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full px-5 py-4 bg-brand-50 border border-brand-900/10 rounded-xl focus:ring-2 focus:ring-brand-accent focus:border-brand-accent transition-all duration-300 font-light text-brand-900 placeholder-brand-900/40" placeholder="034 XX XXX XX" />
+                  <label htmlFor="lastName" className={label}>Nom</label>
+                  <input type="text" id="lastName" required value={lastName} onChange={(e) => setLastName(e.target.value)} className={field} placeholder="Andrianina" />
                 </div>
                 <div>
-                  <label htmlFor="subject" className="block text-sm font-medium text-brand-900 mb-3">Sujet</label>
-                  <select id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} className="w-full px-5 py-4 bg-brand-50 border border-brand-900/10 rounded-xl focus:ring-2 focus:ring-brand-accent focus:border-brand-accent transition-all duration-300 font-light text-brand-900 appearance-none">
-                    <option>Achat de terrain</option>
-                    <option>Réservation d'un terrain</option>
-                    <option>Vérification de titre foncier</option>
-                    <option>Autre demande</option>
-                  </select>
+                  <label htmlFor="phone" className={label}>Téléphone</label>
+                  <input type="tel" id="phone" required value={phone} onChange={(e) => setPhone(e.target.value)} className={field} placeholder="034 XX XXX XX" />
+                </div>
+                <div>
+                  <label htmlFor="email" className={label}>Email <span className="font-normal text-navy-900/50">(facultatif)</span></label>
+                  <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} className={field} placeholder="vous@exemple.com" />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-brand-900 mb-3">Email (facultatif)</label>
-                <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-5 py-4 bg-brand-50 border border-brand-900/10 rounded-xl focus:ring-2 focus:ring-brand-accent focus:border-brand-accent transition-all duration-300 font-light text-brand-900 placeholder-brand-900/40" placeholder="vous@exemple.com" />
+                <label htmlFor="subject" className={label}>Sujet</label>
+                <select id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} className={field}>
+                  <option>Achat de terrain</option>
+                  <option>Vente de terrain</option>
+                  <option>Recherche de terrain</option>
+                  <option>Vérification de titre foncier</option>
+                  <option>Construction</option>
+                  <option>Autre demande</option>
+                </select>
               </div>
 
               <div>
-                <label htmlFor="message" className="block text-sm font-medium text-brand-900 mb-3">Message</label>
-                <textarea id="message" required rows={6} value={message} onChange={(e) => setMessage(e.target.value)} className="w-full px-5 py-4 bg-brand-50 border border-brand-900/10 rounded-xl focus:ring-2 focus:ring-brand-accent focus:border-brand-accent transition-all duration-300 font-light text-brand-900 placeholder-brand-900/40 resize-none" placeholder="Décrivez votre projet ou votre question..."></textarea>
+                <label htmlFor="message" className={label}>Message</label>
+                <textarea id="message" required rows={6} value={message} onChange={(e) => setMessage(e.target.value)} className={`${field} resize-none`} placeholder="Décrivez votre projet ou votre question..." />
               </div>
 
-              <button type="submit" disabled={isSubmitting} className="w-full bg-brand-900 hover:bg-brand-accent disabled:opacity-60 text-white font-medium py-4 px-8 rounded-full transition-all duration-300 flex items-center justify-center shadow-lg shadow-brand-900/20">
-                <Send className="w-5 h-5 mr-3" />
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-gold-500 px-8 py-3.5 text-sm font-semibold text-navy-900 shadow-lg shadow-gold-500/30 transition hover:bg-gold-400 hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0"
+              >
+                <Send className="w-4 h-4" />
                 {isSubmitting ? 'Envoi en cours...' : 'Envoyer le message'}
               </button>
             </form>
           </motion.div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

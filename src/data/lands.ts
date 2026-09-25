@@ -1,6 +1,6 @@
-import { Land } from '../types';
+import { Land, Lot } from '../types';
 
-export const LANDS: Land[] = [
+const BASE_LANDS: Land[] = [
     {
         "id": "1",
         "title": "Terrain résidentiel à Ambohidratrimo",
@@ -259,3 +259,46 @@ export const LANDS: Land[] = [
         "status": "disponible"
     }
 ];
+
+// Parcelles fictives (lotissement) en attendant les vraies données.
+// [surface m², prix Ar, statut]
+const LOTS: Record<string, [number, number, Lot['status']][]> = {
+  '2': [[300, 14500000, 'disponible'], [350, 17000000, 'disponible'], [400, 19500000, 'réservé'], [450, 22000000, 'disponible'], [500, 24000000, 'vendu'], [500, 24000000, 'disponible']],
+  '4': [[250, 14000000, 'disponible'], [300, 17000000, 'vendu'], [300, 17000000, 'disponible'], [300, 17000000, 'disponible'], [350, 20000000, 'réservé']],
+  '5': [[1000, 2000000, 'disponible'], [1500, 3000000, 'disponible'], [2000, 4000000, 'réservé'], [2500, 5000000, 'disponible'], [3000, 6000000, 'vendu'], [5000, 10000000, 'disponible'], [5000, 10000000, 'disponible'], [10000, 20000000, 'disponible']],
+  '7': [[500, 30000000, 'disponible'], [500, 30000000, 'vendu'], [600, 36000000, 'disponible'], [600, 36000000, 'réservé'], [800, 48000000, 'disponible']],
+  '12': [[200, 11500000, 'disponible'], [200, 11500000, 'disponible'], [250, 14500000, 'vendu'], [250, 14500000, 'disponible'], [300, 18000000, 'disponible']],
+};
+
+const LOT_IMAGES = [
+  'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=400&q=70',
+  'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=400&q=70',
+  'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=400&q=70',
+  'https://images.unsplash.com/photo-1464082354059-27db6ce50048?auto=format&fit=crop&w=400&q=70',
+  'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=400&q=70',
+];
+
+const LOT_DETAILS = [
+  'Parcelle plate en bordure de route, accès facile en voiture. Bornage effectué.',
+  'Terrain en angle, bien exposé au soleil, proche de l’eau et de l’électricité (JIRAMA).',
+  'Parcelle calme au fond du lotissement, idéale pour une maison familiale.',
+  'Légère pente avec belle vue dégagée, sol stable et ferme.',
+  'Parcelle viabilisée, à quelques minutes des écoles et commerces.',
+];
+
+export const LANDS: Land[] = BASE_LANDS.map((land) => {
+  const lots = LOTS[land.id];
+  if (!lots) return land;
+  return {
+    ...land,
+    lots: lots.map(([area, price, status], i) => ({
+      id: `${land.id}-${i + 1}`,
+      number: `Lot ${i + 1}`,
+      area,
+      price,
+      status,
+      imageUrl: LOT_IMAGES[i % LOT_IMAGES.length],
+      details: LOT_DETAILS[i % LOT_DETAILS.length],
+    })),
+  };
+});

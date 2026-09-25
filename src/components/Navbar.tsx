@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router-dom';
-import { Home, Map, Info, Phone, CalendarCheck, Menu, X, Facebook } from 'lucide-react';
+import { Home, Info, Phone, Menu, X, Facebook, Hammer, Compass, ShoppingBag, Tag } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FB_URL, PHONE_1, PHONE_1_TEL } from '../lib/contact';
@@ -9,10 +9,11 @@ export default function Navbar() {
 
   const navLinks = [
     { name: 'Accueil', path: '/', icon: <Home className="w-4 h-4 mr-2" /> },
-    { name: 'Terrains', path: '/terrains', icon: <Map className="w-4 h-4 mr-2" /> },
+    { name: 'Acheter', path: '/acheter', icon: <ShoppingBag className="w-4 h-4 mr-2" /> },
+    { name: 'Rechercher un terrain', path: '/recherche', icon: <Compass className="w-4 h-4 mr-2" /> },
+    { name: 'Vendre', path: '/vendre', icon: <Tag className="w-4 h-4 mr-2" /> },
     { name: 'À Propos', path: '/about', icon: <Info className="w-4 h-4 mr-2" /> },
-    { name: 'Réservation', path: '/reservation', icon: <CalendarCheck className="w-4 h-4 mr-2" /> },
-    { name: 'Contact', path: '/contact', icon: <Phone className="w-4 h-4 mr-2" /> },
+    { name: 'Réalisations', path: '/realisations', icon: <Hammer className="w-4 h-4 mr-2" /> },
   ];
 
   return (
@@ -50,14 +51,14 @@ export default function Navbar() {
             </div>
 
             {/* Desktop Menu */}
-            <div className="hidden md:flex items-center space-x-8">
+            <div className="hidden lg:flex items-center space-x-6">
               {navLinks.map((link) => (
                 <NavLink
                   key={link.name}
                   to={link.path}
                   end
                   className={({ isActive }) =>
-                    `relative py-2 text-sm font-medium transition-colors hover:text-gold-500 ${
+                    `relative py-2 text-sm font-medium whitespace-nowrap transition-colors hover:text-gold-500 ${
                       isActive ? 'text-white after:absolute after:left-0 after:-bottom-0.5 after:h-0.5 after:w-full after:rounded-full after:bg-gold-500' : 'text-white/75'
                     }`
                   }
@@ -67,7 +68,7 @@ export default function Navbar() {
               ))}
             </div>
 
-            <div className="hidden md:flex items-center">
+            <div className="hidden lg:flex items-center">
               <Link
                 to="/contact"
                 className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-navy-900 bg-gold-500 rounded-full shadow-lg shadow-gold-500/30 hover:bg-gold-400 transition-colors"
@@ -77,7 +78,7 @@ export default function Navbar() {
             </div>
 
             {/* Mobile menu button */}
-            <div className="flex items-center md:hidden">
+            <div className="flex items-center lg:hidden">
               <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="inline-flex items-center justify-center p-2 text-white/80 hover:text-white focus:outline-none"
@@ -95,7 +96,7 @@ export default function Navbar() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="md:hidden border-t border-white/10 bg-navy-900 overflow-hidden"
+              className="lg:hidden border-t border-white/10 bg-navy-900 overflow-hidden"
             >
               <div className="px-4 pt-4 pb-6 space-y-2">
                 {navLinks.map((link) => (
@@ -110,11 +111,11 @@ export default function Navbar() {
                   </Link>
                 ))}
                 <Link
-                  to="/reservation"
+                  to="/contact"
                   onClick={() => setIsOpen(false)}
                   className="flex items-center justify-center px-3 py-3 mt-2 text-sm font-semibold text-navy-900 bg-gold-500 rounded-full hover:bg-gold-400"
                 >
-                  Réserver un terrain
+                  <Phone className="w-4 h-4 mr-2" /> Nous contacter
                 </Link>
               </div>
             </motion.div>

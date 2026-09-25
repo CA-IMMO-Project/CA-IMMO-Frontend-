@@ -48,7 +48,20 @@ export function newId(): string {
 
 // --- Terrains ---
 export function getLands(): Land[] {
-  return read<Land[]>(KEYS.lands, LANDS);
+  // Les terrains enregistrés avant l'ajout des parcelles n'ont pas de champ `lots` :
+  // on leur ajoute les parcelles par défaut.
+  return read<Land[]>(KEYS.lands, LANDS).map((land) => {
+    const defaults = LANDS.find((l) => l.id === land.id)?.lots;
+    if (land.lots === undefined) return { ...land, lots: defaults };
+    // Complète la photo et les détails des parcelles par défaut enregistrées avant leur ajout.
+    return {
+      ...land,
+      lots: land.lots.map((lot) => {
+        const def = defaults?.find((d) => d.id === lot.id);
+        return def ? { ...lot, imageUrl: lot.imageUrl ?? def.imageUrl, details: lot.details ?? def.details } : lot;
+      }),
+    };
+  });
 }
 
 export function saveLand(land: Land) {

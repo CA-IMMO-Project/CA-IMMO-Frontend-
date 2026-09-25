@@ -94,7 +94,7 @@ export default function About() {
           </nav>
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-lg">
             <Pill dark>Notre histoire, votre confiance</Pill>
-            <h1 className="mt-4 text-5xl md:text-6xl font-extrabold leading-[1.05] tracking-tight">
+            <h1 className="mt-4 text-4xl sm:text-5xl md:text-6xl font-extrabold leading-[1.05] tracking-tight">
               À propos de<br />CA <span className="text-gold-500">Immo</span>
             </h1>
             <p className="mt-6 text-lg md:text-xl font-semibold leading-snug">
@@ -229,7 +229,7 @@ export default function About() {
             <SectionTitle title="Notre histoire" subtitle="Un parcours construit sur la confiance, l’engagement et la passion de l’immobilier." />
             <div className="relative">
               <div className="absolute left-2 right-8 top-2 hidden sm:block h-px bg-navy-900/30" />
-              <div className="grid gap-8 sm:grid-cols-4">
+              <div className="grid gap-8 grid-cols-2 lg:grid-cols-4">
                 {[
                   { y: '2012', t: 'Création de CA Immo', d: 'Une vision claire : faciliter l’accès à la propriété.', ring: false },
                   { y: '2015', t: 'Expansion des services', d: 'Développement du lotissement et des maisons clé en main.', ring: true },

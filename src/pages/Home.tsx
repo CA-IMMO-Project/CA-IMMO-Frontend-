@@ -89,7 +89,7 @@ export default function Home() {
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-20 pb-40 md:pt-24 md:pb-44">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-xl">
             <Eyebrow light><span className="text-xl md:text-2xl font-medium">Bienvenue chez</span></Eyebrow>
-            <h1 className="text-5xl md:text-7xl font-extrabold leading-none tracking-tight mb-5">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold leading-none tracking-tight mb-5">
               CA <span className="text-gold-500">Immo</span>
             </h1>
             <p className="text-xl md:text-2xl font-semibold mb-6">Votre projet immobilier, notre engagement.</p>
@@ -98,7 +98,7 @@ export default function Home() {
               recherche de terrain, lotissement et acquisition de maisons clé en main.
             </p>
             <div className="flex flex-wrap gap-4">
-              <GoldButton to="/terrains">Découvrir nos biens</GoldButton>
+              <GoldButton to="/acheter">Découvrir nos biens</GoldButton>
               <a
                 href={PHONE_1_TEL}
                 className="inline-flex items-center gap-2 rounded-full border border-white/60 px-7 py-3.5 text-sm font-medium transition hover:bg-white hover:text-navy-900"
@@ -283,7 +283,7 @@ export default function Home() {
                 </div>
               ))}
             </div>
-            <GoldButton to="/terrains" small>Voir nos solutions</GoldButton>
+            <GoldButton to="/acheter" small>Voir nos solutions</GoldButton>
           </motion.div>
 
           <motion.div {...fadeUp} className="relative h-80 lg:h-full min-h-[380px]">
@@ -363,8 +363,8 @@ export default function Home() {
             </p>
           </motion.div>
           <motion.div {...fadeUp} className="flex flex-wrap gap-3">
-            <GoldButton to="/reservation" small>J’ai un projet</GoldButton>
-            <Link to="/terrains" className="inline-flex items-center gap-2 rounded-full border border-white/60 px-5 py-2.5 text-xs font-medium transition hover:bg-white hover:text-navy-900">
+            <GoldButton to="/recherche" small>J’ai un projet</GoldButton>
+            <Link to="/acheter" className="inline-flex items-center gap-2 rounded-full border border-white/60 px-5 py-2.5 text-xs font-medium transition hover:bg-white hover:text-navy-900">
               Voir nos terrains <ArrowRight className="w-4 h-4" />
             </Link>
             <Link to="/contact" className="inline-flex items-center gap-2 rounded-full border border-white/60 px-5 py-2.5 text-xs font-medium transition hover:bg-white hover:text-navy-900">

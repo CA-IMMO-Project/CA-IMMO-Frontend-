@@ -30,8 +30,10 @@ export default function Footer() {
           <div>
             <h3 className="text-white font-serif text-lg tracking-wide mb-6">Navigation</h3>
             <ul className="space-y-3 text-sm font-light">
-              <li><Link to="/terrains" className="hover:text-brand-accent transition-colors">Nos Terrains</Link></li>
-              <li><Link to="/reservation" className="hover:text-brand-accent transition-colors">Réservation</Link></li>
+              <li><Link to="/acheter" className="hover:text-brand-accent transition-colors">Acheter</Link></li>
+              <li><Link to="/recherche" className="hover:text-brand-accent transition-colors">Rechercher un terrain</Link></li>
+              <li><Link to="/vendre" className="hover:text-brand-accent transition-colors">Vendre</Link></li>
+              <li><Link to="/realisations" className="hover:text-brand-accent transition-colors">Réalisations</Link></li>
               <li><Link to="/about" className="hover:text-brand-accent transition-colors">À Propos</Link></li>
               <li><Link to="/contact" className="hover:text-brand-accent transition-colors">Contact</Link></li>
             </ul>
