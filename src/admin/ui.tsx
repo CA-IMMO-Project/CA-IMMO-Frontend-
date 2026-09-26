@@ -18,11 +18,11 @@ export function Card({ children, className = '' }: { children: ReactNode; classN
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  disponible: 'bg-green-100 text-green-800',
+  disponible: 'bg-blue-100 text-blue-800',
   réservé: 'bg-amber-100 text-amber-800',
   vendu: 'bg-gray-200 text-gray-700',
   nouveau: 'bg-blue-100 text-blue-800',
-  traité: 'bg-green-100 text-green-800',
+  traité: 'bg-blue-100 text-blue-800',
   archivé: 'bg-gray-200 text-gray-700',
 };
 

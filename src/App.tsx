@@ -15,10 +15,17 @@ import NotFound from './pages/NotFound';
 import Account from './pages/Account';
 import Auth from './pages/Auth';
 import Sell from './pages/Sell';
+import Realisations from './pages/Realisations';
 import AdminLayout, { AdminLogin } from './admin/AdminLayout';
 import Dashboard from './admin/Dashboard';
 import AdminLands from './admin/AdminLands';
-import { AdminMessages, AdminReservations } from './admin/AdminRequests';
+import { AdminMessages } from './admin/AdminRequests';
+import { BuyRequestDetail, BuyRequestForm, BuyRequestList } from './admin/BuyRequests';
+import { LandFileDetail, LandFileForm, LandFileList } from './admin/LandFiles';
+import { ClientDetail, ClientList } from './admin/Clients';
+import { SearchDetail, SearchList } from './admin/Searches';
+import AdminRealisations from './admin/Realisations';
+import Agenda from './admin/Agenda';
 
 function PublicLayout() {
   return (
@@ -48,13 +55,27 @@ export default function App() {
           <Route path="/compte" element={<Account />} />
           <Route path="/vendre" element={<Sell />} />
           <Route path="/reservation" element={<Navigate to="/vendre" replace />} />
+          <Route path="/realisations" element={<Realisations />} />
           <Route path="*" element={<NotFound />} />
         </Route>
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="terrains" element={<AdminLands />} />
-          <Route path="reservations" element={<AdminReservations />} />
+          <Route path="achats" element={<BuyRequestList />} />
+          <Route path="achats/nouveau" element={<BuyRequestForm />} />
+          <Route path="achats/:id" element={<BuyRequestDetail />} />
+          <Route path="achats/:id/modifier" element={<BuyRequestForm key="edit" />} />
+          <Route path="dossiers-terrains" element={<LandFileList />} />
+          <Route path="dossiers-terrains/nouveau" element={<LandFileForm />} />
+          <Route path="dossiers-terrains/:id" element={<LandFileDetail />} />
+          <Route path="dossiers-terrains/:id/modifier" element={<LandFileForm key="edit" />} />
+          <Route path="agenda" element={<Agenda />} />
+          <Route path="clients" element={<ClientList />} />
+          <Route path="clients/:id" element={<ClientDetail />} />
+          <Route path="recherches" element={<SearchList />} />
+          <Route path="recherches/:id" element={<SearchDetail />} />
+          <Route path="realisations" element={<AdminRealisations />} />
           <Route path="messages" element={<AdminMessages />} />
         </Route>
       </Routes>

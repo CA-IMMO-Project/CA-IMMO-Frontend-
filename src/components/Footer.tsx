@@ -33,6 +33,7 @@ export default function Footer() {
               <li><Link to="/terrains" className="hover:text-gold-500 transition-colors">Acheter un terrain</Link></li>
               <li><Link to="/recherche" className="hover:text-gold-500 transition-colors">Recherche sur mesure</Link></li>
               <li><Link to="/vendre" className="hover:text-gold-500 transition-colors">Vendre un terrain</Link></li>
+              <li><Link to="/realisations" className="hover:text-gold-500 transition-colors">Nos réalisations</Link></li>
               <li><Link to="/about" className="hover:text-gold-500 transition-colors">À Propos</Link></li>
             </ul>
           </div>

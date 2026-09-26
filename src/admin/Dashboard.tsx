@@ -1,19 +1,23 @@
 import { Link } from 'react-router-dom';
-import { Map, CheckCircle2, CalendarCheck, Mail } from 'lucide-react';
-import { getLands, getMessages, getReservations } from '../lib/store';
+import { CalendarDays, CheckCircle2, ShoppingBag, Mail } from 'lucide-react';
+import { getLands, getMessages } from '../lib/store';
+import { fullName, getBuyRequests, getLandFiles, phoneOf } from './crm/model';
 import { formatAriary } from '../lib/format';
 import { Badge, Card, PageHeader, formatDate } from './ui';
 
 export default function Dashboard() {
   const lands = getLands();
-  const reservations = getReservations();
+  const requests = [...getBuyRequests()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const messages = getMessages();
 
   const available = lands.filter((l) => l.status === 'disponible');
+  const today = new Date().toDateString();
+  const todo = [...requests.flatMap((r) => r.actions), ...getLandFiles().flatMap((f) => f.actions)].filter((a) => !a.done);
+  const agendaToday = todo.filter((a) => new Date(a.at).toDateString() === today || new Date(a.at).getTime() < Date.now()).length;
   const stats = [
-    { label: 'Terrains', value: lands.length, icon: Map, to: '/admin/terrains' },
+    { label: 'Actions du jour / en retard', value: agendaToday, icon: CalendarDays, to: '/admin/agenda' },
     { label: 'Disponibles', value: available.length, icon: CheckCircle2, to: '/admin/terrains' },
-    { label: 'Réservations nouvelles', value: reservations.filter((r) => r.status === 'nouveau').length, icon: CalendarCheck, to: '/admin/reservations' },
+    { label: 'Demandes d’achat nouvelles', value: requests.filter((r) => r.status === 'Nouvelle').length, icon: ShoppingBag, to: '/admin/achats' },
     { label: 'Messages non traités', value: messages.filter((m) => m.status === 'nouveau').length, icon: Mail, to: '/admin/messages' },
   ];
 
@@ -42,15 +46,15 @@ export default function Dashboard() {
 
       <div className="grid lg:grid-cols-2 gap-4 mt-4">
         <Card className="p-5">
-          <h2 className="font-semibold mb-4 font-display">Dernières réservations</h2>
-          {reservations.length === 0 && <p className="text-sm text-gray-500">Aucune réservation pour l'instant.</p>}
+          <h2 className="font-semibold mb-4 font-display">Dernières demandes d’achat</h2>
+          {requests.length === 0 && <p className="text-sm text-gray-500">Aucune demande pour l'instant.</p>}
           <ul className="divide-y divide-gray-100">
-            {reservations.slice(0, 5).map((r) => (
+            {requests.slice(0, 5).map((r) => (
               <li key={r.id} className="py-2 flex items-center justify-between gap-2 text-sm">
-                <span>
-                  <span className="font-medium">{r.fullName}</span>
-                  <span className="text-gray-500"> — {r.phone}</span>
-                </span>
+                <Link to={`/admin/achats/${r.id}`} className="hover:text-gold-600">
+                  <span className="font-medium">{fullName(r)}</span>
+                  <span className="text-gray-500"> — {phoneOf(r)}</span>
+                </Link>
                 <span className="flex items-center gap-2 shrink-0">
                   <span className="text-xs text-gray-400">{formatDate(r.createdAt)}</span>
                   <Badge value={r.status} />

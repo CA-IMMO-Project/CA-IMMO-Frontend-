@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router-dom';
-import { Home, Map, Phone, Tag, Menu, X, Facebook, UserRound } from 'lucide-react';
+import { Home, Map, Phone, Tag, Menu, X, Facebook, UserRound, Hammer } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FB_URL, PHONE_1, PHONE_1_TEL, WHATSAPP_URL } from '../lib/contact';
@@ -13,6 +13,7 @@ export default function Navbar() {
     { name: 'Accueil', path: '/', icon: <Home className="w-4 h-4 mr-2" /> },
     { name: 'Acheter', path: '/terrains', icon: <Map className="w-4 h-4 mr-2" /> },
     { name: 'Vendre', path: '/vendre', icon: <Tag className="w-4 h-4 mr-2" /> },
+    { name: 'Réalisations', path: '/realisations', icon: <Hammer className="w-4 h-4 mr-2" /> },
   ];
 
   return (

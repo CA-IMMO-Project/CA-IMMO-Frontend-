@@ -1,12 +1,18 @@
 import { useState } from 'react';
 import { NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Map, CalendarCheck, Mail, LogOut, ExternalLink, Lock, Menu, X } from 'lucide-react';
+import { LayoutDashboard, CalendarDays, Map, ShoppingBag, Tag, Users, Compass, Hammer, Mail, LogOut, ExternalLink, Lock, Menu, X } from 'lucide-react';
 import { isAuthenticated, login, logout } from '../lib/store';
+import { seedAgendaOnce } from './crm/model';
 
 const links = [
   { to: '/admin', label: 'Tableau de bord', icon: LayoutDashboard, end: true },
-  { to: '/admin/terrains', label: 'Terrains', icon: Map },
-  { to: '/admin/reservations', label: 'Réservations', icon: CalendarCheck },
+  { to: '/admin/agenda', label: 'Agenda', icon: CalendarDays },
+  { to: '/admin/clients', label: 'Base clients', icon: Users },
+  { to: '/admin/achats', label: 'Demandes d’achat', icon: ShoppingBag },
+  { to: '/admin/recherches', label: 'Recherches spécifiques', icon: Compass },
+  { to: '/admin/dossiers-terrains', label: 'À vendre', icon: Tag },
+  { to: '/admin/terrains', label: 'Catalogue du site', icon: Map },
+  { to: '/admin/realisations', label: 'Réalisations', icon: Hammer },
   { to: '/admin/messages', label: 'Messages', icon: Mail },
 ];
 
@@ -15,6 +21,7 @@ export default function AdminLayout() {
   const [open, setOpen] = useState(false);
 
   if (!isAuthenticated()) return <Navigate to="/admin/login" replace />;
+  seedAgendaOnce(); // données d'exemple de l'agenda (une seule fois)
 
   const handleLogout = () => {
     logout();
@@ -22,9 +29,9 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-mist text-navy-900 font-display lg:flex">
+    <div className="min-h-screen bg-mist text-navy-900 font-display">
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-navy-950 text-white flex flex-col transition-transform lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 w-64 bg-navy-950 text-white flex flex-col transition-transform lg:translate-x-0 ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -35,7 +42,7 @@ export default function AdminLayout() {
             <span className="block text-[10px] text-white/60 mt-1">Backoffice</span>
           </span>
         </div>
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {links.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
@@ -64,8 +71,8 @@ export default function AdminLayout() {
 
       {open && <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={() => setOpen(false)} />}
 
-      <div className="flex-1 min-w-0">
-        <header className="lg:hidden h-16 bg-navy-900 text-white flex items-center px-4">
+      <div className="min-w-0 lg:ml-64">
+        <header className="lg:hidden sticky top-0 z-30 h-16 bg-navy-900 text-white flex items-center px-4">
           <button onClick={() => setOpen(!open)} aria-label="Menu">
             {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
