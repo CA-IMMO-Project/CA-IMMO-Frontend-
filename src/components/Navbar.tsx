@@ -1,13 +1,42 @@
-import { Link, NavLink } from 'react-router-dom';
-import { Home, Map, Phone, Tag, Menu, X, Facebook, UserRound, Hammer } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Home, Map, Phone, Tag, Menu, X, Facebook, UserRound, Hammer, Heart, LogOut, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FB_URL, PHONE_1, PHONE_1_TEL, WHATSAPP_URL } from '../lib/contact';
 import { useAuth } from '../lib/auth';
 
 export default function Navbar() {
-  const [isOpen, setIsOpen] = useState(false);
-  const { user } = useAuth();
+  const [isOpen, setIsOpen] = useState(false); // menu mobile
+  const [menuOpen, setMenuOpen] = useState(false); // menu compte (avatar)
+  const menuRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  // Ferme le menu compte : clic extérieur ou touche Échap.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [menuOpen]);
+
+  const initials = user ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase() : '';
+
+  const handleLogout = () => {
+    setMenuOpen(false);
+    setIsOpen(false);
+    logout();
+    navigate('/');
+  };
 
   const navLinks = [
     { name: 'Accueil', path: '/', icon: <Home className="w-4 h-4 mr-2" /> },
@@ -69,12 +98,76 @@ export default function Navbar() {
             </div>
 
             <div className="hidden md:flex items-center gap-3">
-              <Link
-                to={user ? '/compte' : '/connexion?mode=login'}
-                className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white/80 hover:text-gold-500 transition-colors"
-              >
-                <UserRound className="w-4 h-4" /> {user ? 'Mon espace' : 'Connexion'}
-              </Link>
+              {user ? (
+                /* Compte connecté : avatar + menu déroulant */
+                <div className="relative" ref={menuRef}>
+                  <button
+                    onClick={() => setMenuOpen(!menuOpen)}
+                    aria-expanded={menuOpen}
+                    aria-haspopup="menu"
+                    aria-label="Mon compte"
+                    className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2.5 transition-colors hover:bg-white/10"
+                  >
+                    <span className="grid h-9 w-9 place-items-center rounded-full bg-gold-500 text-xs font-extrabold text-navy-950">
+                      {initials}
+                    </span>
+                    <span className="max-w-[7.5rem] truncate text-sm font-medium text-white/90">{user.firstName}</span>
+                    <ChevronDown className={`w-3.5 h-3.5 text-white/60 transition-transform ${menuOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  <AnimatePresence>
+                    {menuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                        transition={{ duration: 0.18 }}
+                        role="menu"
+                        className="absolute right-0 top-full mt-2 w-64 overflow-hidden rounded-2xl border border-white/10 bg-navy-950 shadow-2xl"
+                      >
+                        <div className="border-b border-white/10 px-4 py-3.5">
+                          <p className="truncate text-sm font-semibold text-white">{user.fullName}</p>
+                          <p className="truncate text-xs text-white/50">{user.email}</p>
+                        </div>
+                        <div className="p-1.5">
+                          <Link
+                            to="/compte"
+                            role="menuitem"
+                            onClick={() => setMenuOpen(false)}
+                            className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                          >
+                            <UserRound className="w-4 h-4" /> Mon espace
+                          </Link>
+                          <Link
+                            to="/compte?tab=favorites"
+                            role="menuitem"
+                            onClick={() => setMenuOpen(false)}
+                            className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                          >
+                            <Heart className="w-4 h-4" /> Mes favoris
+                          </Link>
+                        </div>
+                        <div className="border-t border-white/10 p-1.5">
+                          <button
+                            onClick={handleLogout}
+                            role="menuitem"
+                            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-white/80 transition-colors hover:bg-red-500/15 hover:text-white"
+                          >
+                            <LogOut className="w-4 h-4" /> Déconnexion
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <Link
+                  to="/connexion?mode=login"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white/80 hover:text-gold-500 transition-colors"
+                >
+                  <UserRound className="w-4 h-4" /> Connexion
+                </Link>
+              )}
               <a
                 href={WHATSAPP_URL}
                 target="_blank"
@@ -88,6 +181,15 @@ export default function Navbar() {
 
             {/* Mobile menu button */}
             <div className="flex items-center md:hidden">
+              {user && (
+                <Link
+                  to="/compte"
+                  aria-label="Mon espace"
+                  className="mr-2 grid h-9 w-9 place-items-center rounded-full bg-gold-500 text-xs font-extrabold text-navy-950"
+                >
+                  {initials}
+                </Link>
+              )}
               <button
                 onClick={() => setIsOpen(!isOpen)}
                 aria-expanded={isOpen}
@@ -123,14 +225,42 @@ export default function Navbar() {
                     {link.name}
                   </Link>
                 ))}
-                <Link
-                  to={user ? '/compte' : '/connexion?mode=login'}
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center px-3 py-3 text-sm font-medium text-white/80 hover:text-gold-500"
-                >
-                  <UserRound className="w-4 h-4 mr-2" />
-                  {user ? 'Mon espace' : 'Connexion'}
-                </Link>
+                {user ? (
+                  <>
+                    <Link
+                      to="/compte"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center px-3 py-3 text-sm font-medium text-white/80 hover:text-gold-500"
+                    >
+                      <UserRound className="w-4 h-4 mr-2" />
+                      Mon espace
+                    </Link>
+                    <Link
+                      to="/compte?tab=favorites"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center px-3 py-3 text-sm font-medium text-white/80 hover:text-gold-500"
+                    >
+                      <Heart className="w-4 h-4 mr-2" />
+                      Mes favoris
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="flex w-full items-center px-3 py-3 text-sm font-medium text-white/80 hover:text-red-400"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Déconnexion
+                    </button>
+                  </>
+                ) : (
+                  <Link
+                    to="/connexion?mode=login"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center px-3 py-3 text-sm font-medium text-white/80 hover:text-gold-500"
+                  >
+                    <UserRound className="w-4 h-4 mr-2" />
+                    Connexion
+                  </Link>
+                )}
                 <a
                   href={WHATSAPP_URL}
                   target="_blank"

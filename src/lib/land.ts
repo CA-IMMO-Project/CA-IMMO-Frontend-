@@ -96,12 +96,13 @@ export function useFavorites() {
     };
   }, [user]);
 
-  const toggleFavorite = (id: string) => {
-    if (!user) return; // favoris réservés aux comptes connectés
-    const current = getFavorites(user.id);
+  const toggleFavorite = (id: string, uid?: string) => {
+    const userId = uid ?? user?.id;
+    if (!userId) return; // favoris réservés aux comptes connectés
+    const current = getFavorites(userId);
     const next = current.includes(id) ? current.filter((x) => x !== id) : [...current, id];
     try {
-      localStorage.setItem(favoritesKey(user.id), JSON.stringify(next));
+      localStorage.setItem(favoritesKey(userId), JSON.stringify(next));
     } catch {
       /* stockage indisponible */
     }

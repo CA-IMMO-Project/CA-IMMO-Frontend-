@@ -14,6 +14,7 @@ import {
   LandPlot,
   LogOut,
   Mail,
+  Map,
   MapPin,
   Menu,
   Pencil,
@@ -22,6 +23,7 @@ import {
   Search,
   Settings,
   ShieldCheck,
+  Tag,
   UserRound,
   X,
 } from 'lucide-react';
@@ -526,7 +528,7 @@ export default function Account() {
     setToast('Mot de passe mis à jour');
   };
 
-  if (!user) return <Navigate to="/connexion?mode=login" replace />;
+  if (!user) return <Navigate to="/connexion?mode=login&redirect=/compte" replace />;
 
   const initials = `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
   const activeTab = TABS.find((t) => t.id === active);
@@ -598,14 +600,20 @@ export default function Account() {
         </nav>
 
         <div className="shrink-0 space-y-1 border-t border-white/10 p-4">
-          {/* Seule la déconnexion ramène au site public — l'espace client est fermé. */}
+          {/* Aller-retour possible avec le site : liens naturels vers le catalogue. */}
+          <Link to="/terrains" className="flex items-center gap-3 rounded-lg px-4 py-2 text-sm text-white/75 transition-colors hover:bg-white/10 hover:text-white">
+            <Map className="h-4 w-4" aria-hidden /> Parcourir les terrains
+          </Link>
+          <Link to="/vendre" className="flex items-center gap-3 rounded-lg px-4 py-2 text-sm text-white/75 transition-colors hover:bg-white/10 hover:text-white">
+            <Tag className="h-4 w-4" aria-hidden /> Vendre mon terrain
+          </Link>
           <button
             type="button"
             onClick={() => {
               logout();
               navigate('/');
             }}
-            className="flex w-full items-center gap-3 rounded-lg px-4 py-2 text-sm text-white/75 transition-colors hover:bg-red-500/15 hover:text-white"
+            className="mt-1 flex w-full items-center gap-3 rounded-lg px-4 py-2 text-sm text-white/75 transition-colors hover:bg-red-500/15 hover:text-white"
           >
             <LogOut className="h-4 w-4" aria-hidden /> Déconnexion
           </button>

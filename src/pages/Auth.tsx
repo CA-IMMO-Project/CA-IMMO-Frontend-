@@ -14,11 +14,14 @@ const benefits = [
 export default function Auth() {
   const [params] = useSearchParams();
   const initialMode = params.get('mode') === 'login' ? 'login' : 'register';
+  // Destination après connexion : page d'origine si précisée (ex. /compte), sinon l'espace client.
+  const rawRedirect = params.get('redirect') ?? '/compte';
+  const redirect = rawRedirect.startsWith('/') ? rawRedirect : '/compte';
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // Connexion / inscription réussie (ou compte déjà actif) : direction l'espace client.
-  if (user) return <Navigate to="/compte" replace />;
+  // Connexion / inscription réussie (ou compte déjà actif) : direction la destination choisie.
+  if (user) return <Navigate to={redirect} replace />;
 
   return (
     <div className="font-display overflow-hidden bg-mist">
@@ -46,7 +49,7 @@ export default function Auth() {
               <div className="mt-6">
                 <AuthForm
                   initialMode={initialMode}
-                  onSuccess={() => navigate('/compte', { replace: true })}
+                  onSuccess={() => navigate(redirect, { replace: true })}
                   submitLabels={{ register: 'Créer mon compte', login: 'Se connecter' }}
                 />
               </div>

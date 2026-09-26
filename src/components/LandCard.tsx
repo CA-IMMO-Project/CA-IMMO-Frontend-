@@ -1,8 +1,11 @@
+import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { Heart, MapPin, LandPlot, Maximize2, ArrowRight } from 'lucide-react';
 import { Land } from '../types';
 import { landReference, normalizeLand, pricePerSqm, useFavorites } from '../lib/land';
 import { formatArea, formatAriary } from '../lib/format';
+import { AuthModal } from './AuthModule';
 
 interface LandCardProps {
   land: Land;
@@ -13,6 +16,7 @@ export default function LandCard({ land, horizontal = false }: LandCardProps) {
   const full = normalizeLand(land);
   const { isFavorite, toggleFavorite, enabled } = useFavorites();
   const fav = isFavorite(land.id);
+  const [authOpen, setAuthOpen] = useState(false);
 
   return (
     <article
@@ -29,20 +33,21 @@ export default function LandCard({ land, horizontal = false }: LandCardProps) {
           referrerPolicy="no-referrer"
         />
 
-        {enabled && (
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              toggleFavorite(land.id);
-            }}
-            aria-label={fav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
-            className={`absolute right-4 top-4 z-10 grid h-9 w-9 place-items-center rounded-full bg-white/90 backdrop-blur-sm transition ${
-              fav ? 'text-gold-700' : 'text-navy-900/80 hover:text-navy-900'
-            }`}
-          >
-            <Heart className="h-4 w-4" fill={fav ? 'currentColor' : 'none'} />
-          </button>
-        )}
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (enabled) toggleFavorite(land.id);
+            else setAuthOpen(true); // compte requis : connexion sur place, puis favori ajouté
+          }}
+          aria-label={fav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+          title={enabled ? undefined : 'Connectez-vous pour enregistrer ce terrain'}
+          className={`absolute right-4 top-4 z-10 grid h-9 w-9 place-items-center rounded-full bg-white/90 backdrop-blur-sm transition ${
+            fav ? 'text-gold-700' : 'text-navy-900/80 hover:text-navy-900'
+          }`}
+        >
+          <Heart className="h-4 w-4" fill={fav ? 'currentColor' : 'none'} />
+        </button>
 
         <div className="absolute bottom-4 left-4 rounded-2xl bg-white/95 px-4 py-2.5 shadow-lg shadow-navy-900/10 backdrop-blur-md">
           <div className="text-lg font-extrabold leading-none tracking-tight text-navy-900">{formatAriary(land.price)}</div>
@@ -94,6 +99,20 @@ export default function LandCard({ land, horizontal = false }: LandCardProps) {
           </Link>
         </div>
       </div>
+
+      {/* Modale de connexion rendue hors de la carte (portail) : les transforms
+          au survol de la carte casseraient le positionnement fixe de l'overlay. */}
+      {createPortal(
+        <AuthModal
+          open={authOpen}
+          onClose={() => setAuthOpen(false)}
+          onSuccess={(u) => {
+            setAuthOpen(false);
+            toggleFavorite(land.id, u.id); // le cœur se remplit, on reste sur la page
+          }}
+        />,
+        document.body,
+      )}
     </article>
   );
 }

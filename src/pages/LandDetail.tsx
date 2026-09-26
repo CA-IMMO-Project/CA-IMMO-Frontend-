@@ -417,6 +417,7 @@ export default function LandDetail() {
   const [interest, setInterest] = useState(false);
   const [visit, setVisit] = useState(false);
   const [success, setSuccess] = useState<{ kind: 'interest' | 'visit'; ref: string } | null>(null);
+  const [favAuthOpen, setFavAuthOpen] = useState(false); // connexion demandée depuis le bouton « Enregistrer »
 
   useEffect(() => {
     if (!id) return;
@@ -519,15 +520,17 @@ export default function LandDetail() {
             <ArrowLeft className="h-4 w-4" /> Retour aux terrains
           </button>
           <div className="flex items-center gap-2">
-            {enabled && (
-              <button
-                onClick={() => toggleFavorite(land.id)}
-                className={`btn-outline !px-5 !py-2.5 !text-xs ${fav ? '!border-gold-500 !text-gold-700' : ''}`}
-              >
-                <Heart className="h-4 w-4" fill={fav ? 'currentColor' : 'none'} />
-                {fav ? 'Enregistré' : 'Enregistrer'}
-              </button>
-            )}
+            <button
+              onClick={() => {
+                if (enabled) toggleFavorite(land.id);
+                else setFavAuthOpen(true); // compte requis : connexion sur place, puis favori ajouté
+              }}
+              aria-label={enabled ? undefined : 'Connectez-vous pour enregistrer ce terrain'}
+              className={`btn-outline !px-5 !py-2.5 !text-xs ${fav ? '!border-gold-500 !text-gold-700' : ''}`}
+            >
+              <Heart className="h-4 w-4" fill={fav ? 'currentColor' : 'none'} />
+              {fav ? 'Enregistré' : 'Enregistrer'}
+            </button>
             <button onClick={share} className="btn-outline !px-5 !py-2.5 !text-xs">
               <Share2 className="h-4 w-4" />
               {shared ? 'Lien copié !' : 'Partager'}
@@ -844,6 +847,17 @@ export default function LandDetail() {
           </button>
         </div>
       </Modal>
+
+      {/* — Connexion demandée depuis « Enregistrer » : le favori est ajouté
+          juste après, sans quitter la fiche terrain — */}
+      <AuthModal
+        open={favAuthOpen}
+        onClose={() => setFavAuthOpen(false)}
+        onSuccess={(u) => {
+          setFavAuthOpen(false);
+          toggleFavorite(land.id, u.id);
+        }}
+      />
 
       {/* — Visionneuse — */}
       {lightbox !== null && (
