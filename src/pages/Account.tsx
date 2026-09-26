@@ -5,8 +5,10 @@ import {
   Bell,
   CalendarDays,
   Check,
+  CheckCircle2,
   ChevronRight,
   Clock,
+  ExternalLink,
   FileText,
   Heart,
   KeyRound,
@@ -14,6 +16,7 @@ import {
   LogOut,
   Mail,
   MapPin,
+  Menu,
   Pencil,
   Phone,
   Plus,
@@ -21,27 +24,23 @@ import {
   Settings,
   ShieldCheck,
   UserRound,
+  X,
 } from 'lucide-react';
-import {
-  EmptyState,
-  ErrorBanner,
-  Eyebrow,
-  FormField,
-  Input,
-  Modal,
-  ProgressSteps,
-  Select,
-} from '../components/ui';
+import { EmptyState, ErrorBanner, FormField, Input, Modal } from '../components/ui';
 import LandCard from '../components/LandCard';
 import { useAuth } from '../lib/auth';
 import { deleteReservation, getLands, getReservations, RequestStatus, Reservation } from '../lib/store';
 import { useFavorites } from '../lib/land';
 import { formatArea, formatAriary } from '../lib/format';
+import { PHONE_1, PHONE_1_TEL } from '../lib/contact';
+import { getBuyRequests, BuyRequest, BuyStatus } from '../admin/crm/model';
+import { getSearches, SpecificSearch } from '../admin/crm/people';
 
 /* ==========================================================================
-   Mon espace — suivi des demandes (achat, visites, recherches, ventes),
-   favoris et profil. Données réelles : réservations déposées par l'utilisateur
-   (store local) + favoris (lib/land).
+   Mon espace client — même langage visuel que le backoffice CA IMMO :
+   barre latérale navy, cartes blanches arrondies, badges de statut dorés.
+   Données réelles : réservations du site + dossiers CRM (demandes d'achat,
+   recherches spécifiques) + favoris + profil (lib/auth).
    ========================================================================== */
 
 type TabId = 'overview' | 'purchases' | 'searches' | 'lands' | 'visits' | 'favorites' | 'notifications' | 'profile';
@@ -57,13 +56,65 @@ const TABS: { id: TabId; label: string; icon: typeof Search }[] = [
   { id: 'profile', label: 'Profil et sécurité', icon: Settings },
 ];
 
+/* ---------- Mise en forme (styles du backoffice) ---------- */
+
+const btnBase = 'inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50';
+const btnPrimary = `${btnBase} bg-navy-900 text-white hover:bg-navy-800 px-3.5 py-2`;
+const btnGold = `${btnBase} bg-gold-500 text-navy-950 hover:bg-gold-400 px-3.5 py-2`;
+const btnOutline = `${btnBase} border border-gray-300 bg-white text-navy-900 hover:bg-gray-50 px-3.5 py-2`;
+
+const TONES: Record<string, string> = {
+  gray: 'bg-gray-100 text-gray-700',
+  blue: 'bg-blue-100 text-blue-800',
+  indigo: 'bg-indigo-100 text-indigo-800',
+  amber: 'bg-amber-100 text-amber-800',
+  orange: 'bg-orange-100 text-orange-800',
+  green: 'bg-green-100 text-green-800',
+  red: 'bg-red-100 text-red-700',
+  purple: 'bg-purple-100 text-purple-800',
+  navy: 'bg-navy-900 text-white',
+  gold: 'bg-gold-400 text-navy-950',
+};
+
+const STATUS_TONE: Record<string, string> = {
+  // Demandes d'achat (CRM)
+  Nouvelle: 'blue', 'À contacter': 'orange', Contacté: 'indigo', 'En étude': 'purple', 'Proposition envoyée': 'indigo',
+  'Visite programmée': 'amber', Négociation: 'amber', Validée: 'green', 'Achat finalisé': 'navy', Refusée: 'red', Archivée: 'gray',
+  // Recherches spécifiques (CRM)
+  'En recherche': 'blue', 'Terrains proposés': 'gold', Trouvé: 'green', Clôturée: 'gray',
+  // Réponses aux propositions
+  'En attente': 'gray', Intéressé: 'green', 'Pas intéressé': 'red', 'Visite demandée': 'amber',
+};
+
+const LOCAL_STATUS: Record<RequestStatus, { label: string; tone: string }> = {
+  nouveau: { label: 'En cours de traitement', tone: 'amber' },
+  traité: { label: 'Prise en charge', tone: 'green' },
+  archivé: { label: 'Archivé', tone: 'gray' },
+};
+
+/** Étapes du pipeline d'achat (mêmes statuts que le backoffice). */
+const FLOW: BuyStatus[] = ['Nouvelle', 'À contacter', 'Contacté', 'En étude', 'Proposition envoyée', 'Visite programmée', 'Négociation', 'Validée', 'Achat finalisé'];
+const STAGE_LABELS = ['Demande reçue', 'En traitement', 'Proposition', 'Visite', 'Finalisée'];
+
+function stageOf(status: BuyStatus): number {
+  const i = FLOW.indexOf(status);
+  if (i <= 0) return 0;
+  if (i <= 3) return 1;
+  if (i === 4) return 2;
+  if (i === 5) return 3;
+  return 4;
+}
+
+/* ---------- Dates ---------- */
+
 const parseDate = (iso: string) => new Date(iso.length <= 10 ? `${iso}T12:00:00` : iso);
 
-const fmtDate = (iso: string) =>
-  parseDate(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+const fmtDate = (iso: string) => parseDate(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
-const fmtShort = (iso: string) =>
-  parseDate(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+const fmtShort = (iso: string) => parseDate(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+
+const fmtTime = (iso: string) =>
+  parseDate(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
 const KIND_PREFIX: Record<string, string> = { interet: 'ACH', visite: 'VIS', recherche: 'REC', projet: 'REC', vente: 'VEN' };
 
@@ -76,62 +127,104 @@ function refOf(r: Reservation): string {
   return `${KIND_PREFIX[r.kind ?? 'interet']}-${yy}${mm}${dd}`;
 }
 
-const STATUS_MAP: Record<RequestStatus, { label: string; cls: string }> = {
-  nouveau: { label: 'En cours de traitement', cls: 'border-gold-500/40 bg-gold-500/15 text-gold-700' },
-  traité: { label: 'Prise en charge', cls: 'border-green-700/30 bg-green-700/10 text-green-700' },
-  archivé: { label: 'Archivé', cls: 'border-navy-900/20 bg-navy-900/5 text-navy-900/70' },
-};
+/* ---------- Rapprochement des dossiers CRM avec le compte connecté ---------- */
 
-function StatusPill({ status }: { status: RequestStatus }) {
-  const s = STATUS_MAP[status] ?? STATUS_MAP.nouveau;
+const normPhone = (p?: string) => (p ?? '').replace(/[\s.-]/g, '');
+
+function personMatchesUser(p: { email?: string; phone?: string }, user: { email: string; phone: string }): boolean {
+  if (p.email && user.email && p.email.toLowerCase() === user.email.toLowerCase()) return true;
+  const pp = normPhone(p.phone);
+  const up = normPhone(user.phone);
+  return Boolean(pp && up && (pp === up || pp.endsWith(up) || up.endsWith(pp)));
+}
+
+/** Nombre de terrains du catalogue correspondant aux critères d'une recherche CRM. */
+function searchMatches(s: SpecificSearch): number {
+  const zone = s.mainZone.split(',')[0].trim().toLowerCase();
+  return getLands().filter((l) => {
+    const haystack = `${l.location} ${l.region} ${l.title}`.toLowerCase();
+    const zoneOk = !zone || haystack.includes(zone);
+    const budgetOk = !s.budgetMax || l.price <= s.budgetMax;
+    const areaOk = (!s.areaMin || l.area >= s.areaMin) && (!s.areaMax || l.area <= s.areaMax);
+    return zoneOk && budgetOk && areaOk;
+  }).length;
+}
+
+/* ---------- Petits composants (langage visuel du backoffice) ---------- */
+
+function Card({ title, icon, action, children, pad = true, className = '' }: {
+  title?: string; icon?: React.ReactNode; action?: React.ReactNode; children: React.ReactNode; pad?: boolean; className?: string;
+}) {
   return (
-    <span className={`inline-flex shrink-0 items-center rounded-full border px-3 py-1 text-xs font-semibold ${s.cls}`}>
-      {s.label}
+    <section className={`rounded-2xl border border-gray-200 bg-white shadow-sm ${className}`}>
+      {title && (
+        <header className="flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-4">
+          <h2 className="flex items-center gap-2 font-semibold text-navy-900">
+            {icon && <span className="text-gold-600">{icon}</span>}
+            {title}
+          </h2>
+          {action}
+        </header>
+      )}
+      <div className={pad ? 'p-5' : ''}>{children}</div>
+    </section>
+  );
+}
+
+function StatusBadge({ value, tone }: { value: string; tone?: string }) {
+  const t = TONES[tone ?? STATUS_TONE[value] ?? 'gray'];
+  return (
+    <span className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${t}`}>
+      <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
+      {value}
     </span>
   );
 }
 
-function PanelTitle({ eyebrow, title, text, action }: { eyebrow?: string; title: string; text?: string; action?: React.ReactNode }) {
+function LocalStatusBadge({ status }: { status: RequestStatus }) {
+  const s = LOCAL_STATUS[status] ?? LOCAL_STATUS.nouveau;
+  return <StatusBadge value={s.label} tone={s.tone} />;
+}
+
+function PageHead({ eyebrow, title, text, action }: { eyebrow?: string; title: string; text?: string; action?: React.ReactNode }) {
   return (
-    <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
+    <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
-        {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
-        <h2 className="text-2xl font-bold tracking-tight text-navy-900 md:text-3xl">{title}</h2>
-        {text && <p className="mt-2 max-w-xl text-sm leading-relaxed text-navy-900/85">{text}</p>}
+        {eyebrow && <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gold-700">{eyebrow}</p>}
+        <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-navy-900">{title}</h1>
+        {text && <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-gray-500">{text}</p>}
       </div>
       {action}
+    </header>
+  );
+}
+
+/** Barre de progression d'un dossier (étapes du suivi). */
+function StageTrack({ steps, current }: { steps: string[]; current: number }) {
+  return (
+    <div className="mt-5 flex items-start overflow-x-auto pb-1" role="group" aria-label="Avancement du dossier">
+      {steps.map((label, i) => {
+        const done = i < current;
+        const active = i === current;
+        return (
+          <div key={label} className={`flex items-start ${i < steps.length - 1 ? 'min-w-fit flex-1' : ''}`}>
+            <div className="flex flex-col items-center gap-1.5 px-1">
+              <span
+                className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold transition-colors ${
+                  done ? 'bg-navy-900 text-white' : active ? 'bg-gold-500 text-navy-950 ring-4 ring-gold-500/20' : 'bg-gray-100 text-gray-400'
+                }`}
+              >
+                {done ? <Check className="h-4 w-4" /> : i + 1}
+              </span>
+              <small className={`whitespace-nowrap text-center text-[11px] leading-tight ${done || active ? 'font-semibold text-navy-900' : 'text-gray-400'}`}>
+                {label}
+              </small>
+            </div>
+            {i < steps.length - 1 && <span className={`mx-1 mt-4 h-0.5 flex-1 rounded-full ${done ? 'bg-navy-900' : 'bg-gray-200'}`} />}
+          </div>
+        );
+      })}
     </div>
-  );
-}
-
-function ActionLink({ to, variant = 'gold', children }: { to: string; variant?: 'gold' | 'outline'; children: React.ReactNode }) {
-  const cls =
-    variant === 'gold'
-      ? 'inline-flex shrink-0 items-center gap-2 rounded-full bg-gold-500 px-5 py-2.5 text-xs font-semibold text-navy-900 shadow-lg shadow-gold-500/30 transition hover:bg-gold-400'
-      : 'inline-flex shrink-0 items-center gap-2 rounded-full border border-navy-900/40 px-5 py-2.5 text-xs font-semibold text-navy-900 transition hover:bg-navy-900 hover:text-white';
-  return (
-    <Link to={to} className={cls}>
-      {children}
-    </Link>
-  );
-}
-
-function RequestShell({ r, dateWord, children }: { r: Reservation; dateWord: string; children: React.ReactNode }) {
-  return (
-    <article className="card-soft p-6 sm:p-7">
-      <header className="flex flex-wrap items-center gap-3">
-        <div>
-          <p className="text-sm font-extrabold tracking-wide text-navy-900">{refOf(r)}</p>
-          <p className="text-xs text-navy-900/75">
-            {dateWord} le {fmtDate(r.createdAt)}
-          </p>
-        </div>
-        <span className="ml-auto">
-          <StatusPill status={r.status} />
-        </span>
-      </header>
-      {children}
-    </article>
   );
 }
 
@@ -139,29 +232,60 @@ function LandMini({ landId, actionLabel = 'Voir le terrain' }: { landId?: string
   const land = getLands().find((l) => String(l.id) === String(landId));
   if (!land) {
     return (
-      <p className="mt-4 rounded-xl bg-mist px-4 py-3 text-xs text-navy-900/75">
+      <p className="mt-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-500">
         Terrain retiré du catalogue ou indisponible.
       </p>
     );
   }
   return (
-    <div className="mt-4 flex flex-wrap items-center gap-4 rounded-2xl bg-mist p-4">
-      <img src={land.imageUrl} alt="" className="h-16 w-24 rounded-xl object-cover" />
+    <div className="mt-3 flex flex-wrap items-center gap-4 rounded-xl border border-gray-100 bg-gray-50 p-3.5">
+      <img src={land.imageUrl} alt="" className="h-16 w-24 shrink-0 rounded-lg object-cover" />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-bold text-navy-900">{land.title}</p>
-        <p className="mt-0.5 flex items-center gap-1.5 text-xs text-navy-900/75">
+        <p className="truncate text-sm font-semibold text-navy-900">{land.title}</p>
+        <p className="mt-0.5 flex items-center gap-1.5 text-xs text-gray-500">
           <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
           {land.location}
         </p>
-        <p className="text-xs text-navy-900/75">
+        <p className="text-xs text-gray-500">
           {formatArea(land.area)} • {formatAriary(land.price)}
         </p>
       </div>
-      <ActionLink to={`/terrains/${land.id}`} variant="outline">
+      <Link to={`/terrains/${land.id}`} className={`${btnOutline} shrink-0`}>
         {actionLabel}
-      </ActionLink>
+        <ChevronRight className="h-4 w-4" aria-hidden />
+      </Link>
     </div>
   );
+}
+
+function EmptyBlock({ icon, title, text, actionLabel, onAction }: {
+  icon: typeof Search; title: string; text: string; actionLabel?: string; onAction?: () => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-10 shadow-sm">
+      <EmptyState icon={icon} title={title} text={text} action={actionLabel} onAction={onAction} />
+    </div>
+  );
+}
+
+/* ========================================================================== */
+
+type NotifKind = 'status' | 'visit' | 'match' | 'search' | 'land';
+interface Notif {
+  key: string;
+  title: string;
+  text: string;
+  at: string;
+  kind: NotifKind;
+}
+
+interface VisitItem {
+  key: string;
+  when: string; // date ISO ou AAAA-MM-JJ
+  time?: string;
+  landId?: string;
+  ref: string;
+  source: 'reservation' | 'crm';
 }
 
 export default function Account() {
@@ -170,11 +294,13 @@ export default function Account() {
   const navigate = useNavigate();
   const fav = useFavorites();
   const [version, setVersion] = useState(0);
+  const [open, setOpen] = useState(false); // menu latéral (mobile)
   const [toast, setToast] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [pwOpen, setPwOpen] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
+  const [visitFilter, setVisitFilter] = useState<'upcoming' | 'past'>('upcoming');
   const [editForm, setEditForm] = useState(() => ({
     firstName: user?.firstName ?? '',
     lastName: user?.lastName ?? '',
@@ -200,11 +326,12 @@ export default function Account() {
     return () => window.clearTimeout(t);
   }, [toast]);
 
+  /* ---------- Données ---------- */
+
   const bucket = useMemo(() => {
     const sortDesc = (a: Reservation, b: Reservation) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    if (!user) {
-      return { purchases: [] as Reservation[], searches: [] as Reservation[], sells: [] as Reservation[], visits: [] as Reservation[], recent: [] as Reservation[] };
-    }
+    const empty = { purchases: [] as Reservation[], searches: [] as Reservation[], sells: [] as Reservation[], visits: [] as Reservation[], recent: [] as Reservation[] };
+    if (!user) return empty;
     const mine = getReservations().filter(
       (r) => r.userId === user.id || (!!r.email && r.email.toLowerCase() === user.email.toLowerCase()),
     );
@@ -217,7 +344,112 @@ export default function Account() {
     };
   }, [user, version]);
 
-  const readKey = user ? `caimmo.notif-read:${user.id}` : '';
+  /** Dossiers CRM (backoffice) rattachés à ce compte : suivi réel par l'équipe. */
+  const crm = useMemo(() => {
+    if (!user) return { buys: [] as BuyRequest[], searches: [] as SpecificSearch[] };
+    return {
+      buys: getBuyRequests().filter((b) => personMatchesUser(b, user)),
+      searches: getSearches().filter((s) => personMatchesUser(s, user)),
+    };
+  }, [user, version]);
+
+  /** Demandes d'achat locales sans équivalent CRM (soumises avant l'intégration). */
+  const legacyPurchases = useMemo(() => {
+    const crmKeys = new Set(crm.buys.map((b) => `${b.landId}|${b.createdAt.slice(0, 10)}`));
+    return bucket.purchases.filter((r) => !crmKeys.has(`${r.landId}|${r.createdAt.slice(0, 10)}`));
+  }, [bucket, crm]);
+
+  /* ---------- Visites (réservations + visites programmées au backoffice) ---------- */
+
+  const visits = useMemo<VisitItem[]>(() => {
+    const fromReservations: VisitItem[] = bucket.visits.map((r) => ({
+      key: r.id,
+      when: r.visitDate ?? r.createdAt,
+      time: r.visitTime,
+      landId: r.landId,
+      ref: refOf(r),
+      source: 'reservation',
+    }));
+    const fromCrm: VisitItem[] = crm.buys
+      .filter((b) => b.status === 'Visite programmée' && b.visitAt)
+      .map((b) => ({ key: b.id, when: b.visitAt, landId: b.landId, ref: b.ref, source: 'crm' }));
+    return [...fromReservations, ...fromCrm].sort((a, b) => a.when.localeCompare(b.when));
+  }, [bucket, crm]);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const upcomingVisits = visits.filter((v) => v.when.slice(0, 10) >= today);
+  const pastVisits = visits.filter((v) => v.when.slice(0, 10) < today).reverse();
+  const nextVisit = upcomingVisits[0];
+
+  /* ---------- Notifications (historique réel des dossiers + demandes du site) ---------- */
+
+  const notifs = useMemo<Notif[]>(() => {
+    const out: Notif[] = [];
+    for (const b of crm.buys) {
+      for (const h of b.history) {
+        out.push({ key: `b:${h.id}`, title: `Dossier ${b.ref}`, text: h.text, at: h.at, kind: 'status' });
+      }
+    }
+    for (const s of crm.searches) {
+      for (const h of s.history) {
+        out.push({ key: `s:${h.id}`, title: `Recherche ${s.ref}`, text: h.text, at: h.at, kind: 'search' });
+      }
+      for (const p of s.proposals) {
+        const land = getLands().find((l) => l.id === p.landId);
+        out.push({
+          key: `sp:${p.id}`,
+          title: `Recherche ${s.ref}`,
+          text: land ? `Le terrain « ${land.title} » vous a été proposé par notre équipe.` : 'Un terrain vous a été proposé par notre équipe.',
+          at: p.at,
+          kind: 'match',
+        });
+      }
+    }
+    for (const r of bucket.recent) {
+      const ref = refOf(r);
+      switch (r.kind) {
+        case 'visite':
+          out.push({
+            key: `r:${r.id}:${r.status}`,
+            title: r.status === 'traité' ? `Visite confirmée — ${ref}` : `Demande de visite ${ref}`,
+            text: r.visitDate ? `Souhaitée le ${fmtDate(r.visitDate)}${r.visitTime ? ` à ${r.visitTime}` : ''}` : 'Votre demande de visite a bien été enregistrée.',
+            at: r.createdAt,
+            kind: 'visit',
+          });
+          break;
+        case 'recherche':
+        case 'projet':
+          out.push({
+            key: `r:${r.id}:${r.status}`,
+            title: r.status === 'traité' ? `Recherche prise en charge — ${ref}` : `Recherche ${ref} enregistrée`,
+            text: r.projectName || 'Vos critères sont enregistrés, notre équipe les étudie.',
+            at: r.createdAt,
+            kind: 'search',
+          });
+          break;
+        case 'vente':
+          out.push({
+            key: `r:${r.id}:${r.status}`,
+            title: r.status === 'traité' ? `Dossier de vente validé — ${ref}` : `Dossier de vente ${ref} reçu`,
+            text: r.projectName || 'Notre équipe examine les documents transmis.',
+            at: r.createdAt,
+            kind: 'land',
+          });
+          break;
+        default:
+          out.push({
+            key: `r:${r.id}:${r.status}`,
+            title: r.status === 'traité' ? `Demande prise en charge — ${ref}` : `Demande ${ref} enregistrée`,
+            text: r.projectName || 'Votre demande d’achat est en cours de traitement.',
+            at: r.createdAt,
+            kind: 'status',
+          });
+      }
+    }
+    return out.sort((a, b) => b.at.localeCompare(a.at));
+  }, [bucket, crm]);
+
+  const readKey = user ? `caimmo.espace-read:${user.id}` : '';
   const [readKeys, setReadKeys] = useState<string[]>(() => {
     try {
       return JSON.parse(localStorage.getItem(readKey) ?? '[]') as string[];
@@ -226,63 +458,33 @@ export default function Account() {
     }
   });
 
-  const events = useMemo(() => {
-    return bucket.recent.map((r) => {
-      const ref = refOf(r);
-      const key = `${r.id}:${r.status}`;
-      let title: string;
-      let text: string;
-      let type: 'check' | 'visit' | 'search' | 'land';
-      switch (r.kind) {
-        case 'visite':
-          type = 'visit';
-          title = r.status === 'traité' ? `Visite confirmée — ${ref}` : `Demande de visite ${ref}`;
-          text = r.visitDate ? `Souhaitée le ${fmtDate(r.visitDate)}${r.visitTime ? ` à ${r.visitTime}` : ''}` : 'Votre demande de visite a bien été enregistrée.';
-          break;
-        case 'recherche':
-        case 'projet':
-          type = 'search';
-          title = r.status === 'traité' ? `Recherche prise en charge — ${ref}` : `Recherche ${ref} enregistrée`;
-          text = r.projectName || 'Vos critères sont enregistrés, notre équipe les étudie.';
-          break;
-        case 'vente':
-          type = 'land';
-          title = r.status === 'traité' ? `Dossier de vente validé — ${ref}` : `Dossier de vente ${ref} reçu`;
-          text = r.projectName || 'Notre équipe examine les documents transmis.';
-          break;
-        default:
-          title = r.status === 'traité' ? `Demande prise en charge — ${ref}` : `Demande ${ref} enregistrée`;
-          text = r.projectName || 'Votre demande d’achat est en cours de traitement.';
-      }
-      return { key, title, text, type, date: r.createdAt };
-    });
-  }, [bucket]);
-
-  const unread = events.filter((e) => !readKeys.includes(e.key)).length;
-  const today = new Date().toISOString().slice(0, 10);
-  const upcoming = bucket.visits.filter((r) => (r.visitDate ?? '') >= today).sort((a, b) => (a.visitDate ?? '').localeCompare(b.visitDate ?? ''));
-  const pastVisits = bucket.visits.filter((r) => (r.visitDate ?? '') < today);
-  const nextVisit = upcoming[0];
-  const favLands = getLands().filter((l) => fav.favorites.includes(String(l.id)));
-  const recommended = getLands().slice(0, 3);
-
-  const counts: Partial<Record<TabId, number>> = {
-    purchases: bucket.purchases.length,
-    searches: bucket.searches.length,
-    lands: bucket.sells.length,
-    visits: bucket.visits.length,
-    favorites: favLands.length,
-    notifications: unread,
-  };
+  const unread = notifs.filter((n) => !readKeys.includes(n.key)).length;
 
   const markAllRead = () => {
-    const keys = events.map((e) => e.key);
+    const keys = notifs.map((n) => n.key);
     setReadKeys(keys);
     try {
       localStorage.setItem(readKey, JSON.stringify(keys));
     } catch {
       /* stockage indisponible */
     }
+  };
+
+  /* ---------- Divers ---------- */
+
+  const favLands = getLands().filter((l) => fav.favorites.includes(String(l.id)));
+  const recommended = useMemo(() => {
+    const all = getLands();
+    return [...all.filter((l) => (l as { featured?: boolean }).featured), ...all.filter((l) => !(l as { featured?: boolean }).featured)].slice(0, 3);
+  }, [version]);
+
+  const counts: Partial<Record<TabId, number>> = {
+    purchases: crm.buys.length + legacyPurchases.length,
+    searches: crm.searches.length + bucket.searches.length,
+    lands: bucket.sells.length,
+    visits: upcomingVisits.length,
+    favorites: favLands.length,
+    notifications: unread,
   };
 
   const cancelVisit = (r: Reservation) => {
@@ -328,125 +530,126 @@ export default function Account() {
   if (!user) return <Navigate to="/connexion?mode=login" replace />;
 
   const initials = `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
-  const eventIcons = { check: Check, visit: CalendarDays, search: Search, land: LandPlot } as const;
+  const activeTab = TABS.find((t) => t.id === active);
+  const notifIcon = { status: CheckCircle2, visit: CalendarDays, match: Search, search: Search, land: LandPlot } as const;
+  const notifTone: Record<NotifKind, string> = {
+    status: 'green', visit: 'blue', match: 'amber', search: 'orange', land: 'purple',
+  };
 
   return (
-    <div className="font-display overflow-hidden bg-mist">
-      {/* — Bandeau de bienvenue — signature navy + or des pages Accueil / À propos — */}
-      <section className="relative overflow-hidden bg-navy-900 text-white">
-        <svg className="absolute left-0 top-6 h-24 w-5 text-gold-500 md:h-32 md:w-7" viewBox="0 0 30 160" aria-hidden>
-          <path fill="currentColor" d="M0,0 C30,30 30,120 0,160 Z" />
-        </svg>
-        <svg className="absolute bottom-4 right-0 h-28 w-8 text-gold-500" viewBox="0 0 40 180" aria-hidden>
-          <path fill="currentColor" d="M40,0 C0,40 0,140 40,180 Z" />
-        </svg>
-        <div className="relative z-10 mx-auto flex max-w-7xl flex-wrap items-center gap-6 px-4 py-12 sm:px-6 md:py-16 lg:px-8">
-          <span className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-white/10 text-xl font-extrabold text-gold-500 ring-2 ring-gold-500/60">
-            {initials}
+    <div className="min-h-screen bg-mist font-display text-navy-900">
+      {/* — Barre latérale (même gabarit que le backoffice) — */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-navy-950 text-white transition-transform lg:translate-x-0 ${
+          open ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="flex h-20 shrink-0 items-center border-b border-white/10 px-6">
+          <img src="/Logo.jpeg" alt="CA IMMO" className="h-10 w-10 rounded-lg object-cover" />
+          <span className="ml-3 leading-none">
+            <span className="block font-extrabold">
+              CA <span className="text-gold-500">IMMO</span>
+            </span>
+            <span className="mt-1 block text-[10px] text-white/60">Mon espace client</span>
           </span>
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold-500">Bienvenue dans votre espace</p>
-            <h1 className="mt-2 text-3xl font-extrabold tracking-tight md:text-4xl">Bonjour, {user.firstName}</h1>
-            <p className="mt-2 truncate text-sm text-white/80">{user.email}</p>
+        </div>
+
+        <div className="shrink-0 border-b border-white/10 p-4">
+          <div className="flex items-center gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gold-500 text-sm font-extrabold text-navy-950">
+              {initials}
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold">{user.fullName}</p>
+              <p className="flex items-center gap-1 truncate text-xs text-white/55">
+                <ShieldCheck className="h-3 w-3 shrink-0 text-gold-500" aria-hidden /> Compte vérifié
+              </p>
+            </div>
           </div>
+        </div>
+
+        <nav className="flex-1 space-y-1 overflow-y-auto p-4" aria-label="Sections de mon espace">
+          {TABS.map((t) => {
+            const Icon = t.icon;
+            const isActive = active === t.id;
+            const count = counts[t.id];
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => {
+                  setTab(t.id);
+                  setOpen(false);
+                }}
+                aria-current={isActive ? 'page' : undefined}
+                className={`flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
+                  isActive ? 'bg-gold-500 text-navy-950' : 'text-white/75 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <Icon className="h-4 w-4 shrink-0" aria-hidden />
+                <span>{t.label}</span>
+                {count ? (
+                  <b className={`ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-bold ${isActive ? 'bg-navy-950/15 text-navy-950' : 'bg-gold-500 text-navy-950'}`}>
+                    {count}
+                  </b>
+                ) : null}
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="shrink-0 space-y-1 border-t border-white/10 p-4">
+          <Link to="/" className="flex items-center gap-3 rounded-lg px-4 py-2 text-sm text-white/75 transition-colors hover:bg-white/10 hover:text-white">
+            <ExternalLink className="h-4 w-4" aria-hidden /> Retour au site
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              logout();
+              navigate('/');
+            }}
+            className="flex w-full items-center gap-3 rounded-lg px-4 py-2 text-sm text-white/75 transition-colors hover:bg-red-500/15 hover:text-white"
+          >
+            <LogOut className="h-4 w-4" aria-hidden /> Déconnexion
+          </button>
+        </div>
+      </aside>
+
+      {open && <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={() => setOpen(false)} aria-hidden />}
+
+      <div className="min-w-0 lg:ml-64">
+        {/* — Barre supérieure mobile — */}
+        <header className="sticky top-0 z-30 flex h-16 items-center bg-navy-900 px-4 text-white lg:hidden">
+          <button onClick={() => setOpen(!open)} aria-label="Menu">
+            {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+          <span className="ml-4 font-bold">
+            CA IMMO — {activeTab?.label ?? 'Mon espace'}
+          </span>
           {unread > 0 && (
-            <button
-              type="button"
-              onClick={() => setTab('notifications')}
-              className="ml-auto flex items-center gap-3 rounded-2xl bg-white/10 px-5 py-3 transition hover:bg-white/15"
-            >
-              <Bell className="h-5 w-5 text-gold-500" aria-hidden />
-              <span className="text-left text-xs text-white/85">
-                <strong className="text-lg text-white">{unread}</strong>
-                <br />
-                non lue{unread > 1 ? 's' : ''}
-              </span>
+            <button type="button" onClick={() => setTab('notifications')} className="ml-auto flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold">
+              <Bell className="h-3.5 w-3.5 text-gold-500" aria-hidden /> {unread}
             </button>
           )}
-        </div>
-      </section>
+        </header>
 
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:py-14 lg:grid-cols-12 lg:px-8">
-        {/* — Navigation latérale (sélecteur sur mobile) — */}
-        <aside className="lg:col-span-3">
-          <div className="card-soft p-3 lg:sticky lg:top-24">
-            <label className="block lg:hidden">
-              <span className="sr-only">Section de mon espace</span>
-              <Select value={active} onChange={(e) => setTab(e.target.value as TabId)}>
-                {TABS.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.label}
-                  </option>
-                ))}
-              </Select>
-            </label>
-            <nav role="tablist" aria-orientation="vertical" aria-label="Sections de mon espace" className="hidden flex-col gap-1 lg:flex">
-              {TABS.map((t) => {
-                const Icon = t.icon;
-                const count = counts[t.id];
-                const isActive = active === t.id;
-                return (
-                  <button
-                    key={t.id}
-                    type="button"
-                    role="tab"
-                    id={`tab-${t.id}`}
-                    aria-selected={isActive}
-                    aria-controls={`panel-${t.id}`}
-                    onClick={() => setTab(t.id)}
-                    className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
-                      isActive ? 'bg-navy-900 text-white' : 'text-navy-900 hover:bg-mist'
-                    }`}
-                  >
-                    <Icon className="h-4 w-4 shrink-0" aria-hidden />
-                    <span>{t.label}</span>
-                    {count ? (
-                      <b className={`ml-auto rounded-full px-2 py-0.5 text-xs ${isActive ? 'bg-gold-500 text-navy-900' : 'bg-navy-900/5 text-navy-900'}`}>
-                        {count}
-                      </b>
-                    ) : (
-                      <ChevronRight className={`ml-auto h-4 w-4 ${isActive ? 'text-gold-500' : 'opacity-40'}`} aria-hidden />
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-            <button
-              type="button"
-              onClick={() => {
-                logout();
-                navigate('/');
-              }}
-              className="mt-3 hidden w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-navy-900/80 transition hover:bg-red-50 hover:text-red-700 lg:flex"
-            >
-              <LogOut className="h-4 w-4 shrink-0" aria-hidden /> Se déconnecter
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                logout();
-                navigate('/');
-              }}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-navy-900/20 px-4 py-3 text-sm font-medium text-navy-900/80 transition hover:bg-red-50 hover:text-red-700 lg:hidden"
-            >
-              <LogOut className="h-4 w-4 shrink-0" aria-hidden /> Se déconnecter
-            </button>
-          </div>
-        </aside>
-
-        {/* — Contenu de la section active — */}
-        <main role="tabpanel" id={`panel-${active}`} aria-labelledby={`tab-${active}`} tabIndex={0} className="min-w-0 lg:col-span-9">
-          <motion.div key={active} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-
+        <main className="mx-auto max-w-7xl p-4 sm:p-8">
+          <motion.div key={active} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+            {/* ================= VUE D'ENSEMBLE ================= */}
             {active === 'overview' && (
               <>
-                <PanelTitle eyebrow="Mon espace" title="Vue d’ensemble" text="Suivez vos projets et les dernières mises à jour." />
-                <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                <PageHead
+                  eyebrow="Mon espace"
+                  title={`Bonjour, ${user.firstName} 👋`}
+                  text="Suivez vos projets et les dernières mises à jour de votre espace."
+                />
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   {([
-                    { id: 'purchases', icon: FileText, label: 'Demandes d’achat', count: bucket.purchases.length },
-                    { id: 'searches', icon: Search, label: 'Recherches actives', count: bucket.searches.length },
-                    { id: 'visits', icon: CalendarDays, label: 'Visites', count: bucket.visits.length },
-                    { id: 'lands', icon: LandPlot, label: 'Terrains proposés', count: bucket.sells.length },
+                    { id: 'purchases', icon: FileText, label: 'Demandes d’achat', count: counts.purchases ?? 0, tone: 'blue' },
+                    { id: 'searches', icon: Search, label: 'Recherches actives', count: counts.searches ?? 0, tone: 'orange' },
+                    { id: 'visits', icon: CalendarDays, label: 'Visites à venir', count: counts.visits ?? 0, tone: 'green' },
+                    { id: 'lands', icon: LandPlot, label: 'Terrains proposés', count: counts.lands ?? 0, tone: 'purple' },
                   ] as const).map((s) => {
                     const Icon = s.icon;
                     return (
@@ -454,102 +657,127 @@ export default function Account() {
                         key={s.id}
                         type="button"
                         onClick={() => setTab(s.id)}
-                        className="card-soft card-lift flex items-center gap-4 p-5 text-left"
+                        className="group flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                       >
-                        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gold-500/15 text-gold-700">
+                        <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${TONES[s.tone]}`}>
                           <Icon className="h-5 w-5" aria-hidden />
                         </span>
                         <span className="min-w-0">
-                          <strong className="block text-2xl font-extrabold text-navy-900">{s.count}</strong>
-                          <span className="block truncate text-xs text-navy-900/75">{s.label}</span>
+                          <strong className="block text-2xl font-bold text-navy-900">{s.count}</strong>
+                          <span className="block truncate text-xs text-gray-500">{s.label}</span>
                         </span>
-                        <ChevronRight className="ml-auto h-4 w-4 shrink-0 text-navy-900/40" aria-hidden />
+                        <ChevronRight className="ml-auto h-4 w-4 shrink-0 text-gray-300 transition group-hover:text-gold-600" aria-hidden />
                       </button>
                     );
                   })}
                 </div>
 
-                {bucket.recent.length === 0 ? (
-                  <div className="card-soft mt-8 p-8">
-                    <EmptyState
+                {notifs.length === 0 && upcomingVisits.length === 0 ? (
+                  <div className="mt-6">
+                    <EmptyBlock
                       icon={Search}
                       title="Aucun projet pour l’instant"
                       text="Confiez-nous une recherche ou proposez votre terrain : le suivi apparaîtra ici."
-                    >
-                      <div className="mt-5 flex flex-wrap justify-center gap-3">
-                        <ActionLink to="/recherche">Confier ma recherche</ActionLink>
-                        <ActionLink to="/vendre" variant="outline">
-                          <Plus className="h-4 w-4" aria-hidden /> Proposer un terrain
-                        </ActionLink>
-                      </div>
-                    </EmptyState>
+                    />
+                    <div className="mt-5 flex flex-wrap gap-3">
+                      <button type="button" onClick={() => navigate('/recherche')} className={btnGold}>
+                        <Search className="h-4 w-4" aria-hidden /> Confier ma recherche
+                      </button>
+                      <button type="button" onClick={() => navigate('/vendre')} className={btnOutline}>
+                        <Plus className="h-4 w-4" aria-hidden /> Proposer un terrain
+                      </button>
+                    </div>
                   </div>
                 ) : (
-                  <div className="mt-8 grid gap-6 lg:grid-cols-5">
-                    <section className="card-soft p-6 sm:p-7 lg:col-span-3">
-                      <h3 className="text-lg font-bold text-navy-900">Activités récentes</h3>
-                      <ul className="mt-5 space-y-5">
-                        {events.slice(0, 5).map((e) => {
-                          const Icon = eventIcons[e.type];
-                          return (
-                            <li key={e.key} className="flex items-start gap-4">
-                              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-navy-900/5 text-navy-900">
-                                <Icon className="h-4 w-4" aria-hidden />
-                              </span>
-                              <div className="min-w-0">
-                                <p className="text-sm font-bold text-navy-900">{e.title}</p>
-                                <p className="mt-0.5 text-xs leading-relaxed text-navy-900/75">{e.text}</p>
-                                <p className="mt-1 text-xs text-navy-900/60">{fmtShort(e.date)}</p>
-                              </div>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </section>
+                  <div className="mt-6 grid gap-4 lg:grid-cols-5">
+                    {/* Activités récentes */}
+                    <Card title="Activités récentes" icon={<Bell className="h-4 w-4" />} className="lg:col-span-3">
+                      {notifs.length === 0 ? (
+                        <p className="py-6 text-center text-sm text-gray-500">Les mises à jour de vos projets apparaîtront ici.</p>
+                      ) : (
+                        <ul className="space-y-4">
+                          {notifs.slice(0, 5).map((n) => {
+                            const Icon = notifIcon[n.kind];
+                            return (
+                              <li key={n.key} className="flex items-start gap-3.5">
+                                <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${TONES[notifTone[n.kind]]}`}>
+                                  <Icon className="h-4 w-4" aria-hidden />
+                                </span>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold text-navy-900">{n.title}</p>
+                                  <p className="mt-0.5 text-xs leading-relaxed text-gray-500">{n.text}</p>
+                                  <p className="mt-1 text-[11px] text-gray-400">{fmtShort(n.at)}</p>
+                                </div>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                      {notifs.length > 5 && (
+                        <button type="button" onClick={() => setTab('notifications')} className="mt-5 text-xs font-semibold text-navy-900 underline decoration-gold-500 decoration-2 underline-offset-4 transition hover:text-gold-700">
+                          Tout voir ({notifs.length})
+                        </button>
+                      )}
+                    </Card>
+
+                    {/* Prochaine visite */}
                     {nextVisit ? (
-                      <section className="card-soft p-6 sm:p-7 lg:col-span-2">
-                        <div className="flex items-center justify-between gap-3">
-                          <h3 className="text-lg font-bold text-navy-900">Prochaine visite</h3>
-                          <button type="button" onClick={() => setTab('visits')} className="text-xs font-semibold text-navy-900 underline decoration-gold-500 decoration-2 underline-offset-4 transition hover:text-gold-700">
-                            Détails
-                          </button>
+                      <Card title="Prochaine visite" icon={<CalendarDays className="h-4 w-4" />} className="lg:col-span-2" action={
+                        <button type="button" onClick={() => setTab('visits')} className="text-xs font-semibold text-gray-500 transition hover:text-navy-900">
+                          Détails
+                        </button>
+                      }>
+                        <div className="flex items-start gap-4">
+                          <div className="grid h-16 w-16 shrink-0 place-items-center rounded-xl bg-navy-900 text-white">
+                            <strong className="text-2xl font-bold leading-none">{parseDate(nextVisit.when).getDate()}</strong>
+                            <small className="text-[10px] uppercase tracking-wide text-gold-500">
+                              {parseDate(nextVisit.when).toLocaleDateString('fr-FR', { month: 'short' })}
+                            </small>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="flex items-center gap-1.5 text-sm font-semibold text-navy-900">
+                              <Clock className="h-3.5 w-3.5 text-gold-600" aria-hidden />
+                              {fmtDate(nextVisit.when)}
+                              {nextVisit.time ? ` — ${nextVisit.time}` : nextVisit.source === 'crm' ? ` — ${fmtTime(nextVisit.when)}` : ''}
+                            </p>
+                            <p className="mt-1 font-mono text-xs text-gray-400">Dossier {nextVisit.ref}</p>
+                          </div>
                         </div>
-                        <p className="mt-5 flex items-center gap-2 text-sm font-semibold text-navy-900">
-                          <CalendarDays className="h-4 w-4 text-gold-700" aria-hidden />
-                          {nextVisit.visitDate ? fmtDate(nextVisit.visitDate) : 'Date à confirmer'}
-                          {nextVisit.visitTime && (
-                            <span className="flex items-center gap-1 text-xs font-normal text-navy-900/75">
-                              <Clock className="h-3.5 w-3.5" aria-hidden />
-                              {nextVisit.visitTime}
-                            </span>
-                          )}
-                        </p>
                         <LandMini landId={nextVisit.landId} />
-                      </section>
+                        <div className="mt-4 flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3.5">
+                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-navy-900 text-xs font-bold text-gold-500">CA</span>
+                          <div className="min-w-0 flex-1">
+                            <small className="block text-[11px] text-gray-400">Votre conseiller</small>
+                            <strong className="block text-sm text-navy-900">Équipe CA IMMO — {PHONE_1}</strong>
+                          </div>
+                          <a href={PHONE_1_TEL} className={`${btnPrimary} shrink-0`} aria-label="Appeler votre conseiller">
+                            <Phone className="h-4 w-4" aria-hidden />
+                          </a>
+                        </div>
+                      </Card>
                     ) : (
-                      <section className="card-soft p-6 sm:p-7 lg:col-span-2">
-                        <h3 className="text-lg font-bold text-navy-900">Une visite sur place ?</h3>
-                        <p className="mt-3 text-sm leading-relaxed text-navy-900/85">
+                      <Card title="Une visite sur place ?" icon={<MapPin className="h-4 w-4" />} className="lg:col-span-2">
+                        <p className="text-sm leading-relaxed text-gray-600">
                           Choisissez un terrain et demandez une visite : notre équipe organise le rendez-vous avec vous.
                         </p>
-                        <div className="mt-5">
-                          <ActionLink to="/terrains">Parcourir les terrains</ActionLink>
-                        </div>
-                      </section>
+                        <button type="button" onClick={() => navigate('/terrains')} className={`${btnGold} mt-5`}>
+                          Parcourir les terrains <ChevronRight className="h-4 w-4" aria-hidden />
+                        </button>
+                      </Card>
                     )}
                   </div>
                 )}
 
                 {recommended.length > 0 && (
                   <section className="mt-8">
-                    <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+                    <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
                       <div>
-                        <Eyebrow>Sélection du moment</Eyebrow>
-                        <h3 className="text-lg font-bold text-navy-900">Recommandés pour vous</h3>
+                        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gold-700">Sélection du moment</p>
+                        <h2 className="mt-1 text-xl font-bold text-navy-900">Recommandés pour vous</h2>
                       </div>
-                      <ActionLink to="/terrains" variant="outline">
+                      <button type="button" onClick={() => navigate('/terrains')} className={btnOutline}>
                         Voir tous les terrains <ChevronRight className="h-4 w-4" aria-hidden />
-                      </ActionLink>
+                      </button>
                     </div>
                     <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                       {recommended.map((l) => (
@@ -561,187 +789,443 @@ export default function Account() {
               </>
             )}
 
+            {/* ================= DEMANDES D'ACHAT ================= */}
             {active === 'purchases' && (
               <>
-                <PanelTitle
+                <PageHead
                   eyebrow="Suivi"
-                  title="Demandes d’achat"
-                  text="Consultez l’avancement de vos intérêts pour les terrains publiés."
-                  action={<ActionLink to="/terrains"><Plus className="h-4 w-4" aria-hidden /> Nouveau projet</ActionLink>}
+                  title="Mes demandes d’achat"
+                  text="L’avancement de vos intérêts pour les terrains publiés, suivi par notre équipe."
+                  action={
+                    <button type="button" onClick={() => navigate('/terrains')} className={btnGold}>
+                      <Plus className="h-4 w-4" aria-hidden /> Nouveau projet
+                    </button>
+                  }
                 />
-                {bucket.purchases.length === 0 ? (
-                  <div className="card-soft p-8">
-                    <EmptyState icon={FileText} title="Aucune demande d’achat" text="Votre historique d’intérêts apparaîtra ici." action="Parcourir les terrains" onAction={() => navigate('/terrains')} />
-                  </div>
+                {crm.buys.length + legacyPurchases.length === 0 ? (
+                  <EmptyBlock
+                    icon={FileText}
+                    title="Aucune demande d’achat"
+                    text="Votre historique d’intérêts apparaîtra ici."
+                    actionLabel="Parcourir les terrains"
+                    onAction={() => navigate('/terrains')}
+                  />
                 ) : (
-                  <div className="space-y-5">
-                    {bucket.purchases.map((r) => (
-                      <RequestShell key={r.id} r={r} dateWord="Envoyée">
-                        <LandMini landId={r.landId} />
-                        {r.paymentMode && (
-                          <p className="mt-3 text-xs text-navy-900/75">Paiement souhaité : <strong className="font-semibold">{r.paymentMode}</strong></p>
-                        )}
-                        <div className="mt-6">
-                          <ProgressSteps steps={['Demande reçue', 'En traitement', 'Prise en charge']} current={r.status === 'nouveau' ? 1 : 2} />
+                  <div className="space-y-4">
+                    {/* Dossiers suivis dans le backoffice (statut réel) */}
+                    {crm.buys.map((b) => {
+                      const dead = b.status === 'Refusée' || b.status === 'Archivée';
+                      return (
+                        <article key={b.id} className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                          <header className="flex flex-wrap items-center gap-3 border-b border-gray-100 px-5 py-4">
+                            <div>
+                              <p className="font-mono text-xs font-bold text-navy-900">{b.ref}</p>
+                              <p className="mt-0.5 text-xs text-gray-500">Envoyée le {fmtDate(b.createdAt)}</p>
+                            </div>
+                            <span className="ml-auto">
+                              <StatusBadge value={b.status} />
+                            </span>
+                          </header>
+                          <div className="p-5">
+                            <LandMini landId={b.landId} />
+                            {b.paymentMode && (
+                              <p className="mt-3 text-xs text-gray-500">
+                                Paiement souhaité : <strong className="font-semibold text-navy-900">{b.paymentMode}</strong>
+                              </p>
+                            )}
+                            {dead ? (
+                              <p className={`mt-4 flex items-start gap-2.5 rounded-xl px-4 py-3 text-xs leading-relaxed ${
+                                b.status === 'Refusée' ? 'bg-red-50 text-red-800' : 'bg-gray-100 text-gray-600'
+                              }`}>
+                                <Clock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                                <span>
+                                  <strong className="font-bold">{b.status === 'Refusée' ? 'Dossier clôturé.' : 'Dossier archivé.'}</strong>{' '}
+                                  Contactez-nous au {PHONE_1} pour toute question.
+                                </span>
+                              </p>
+                            ) : (
+                              <StageTrack steps={STAGE_LABELS} current={stageOf(b.status)} />
+                            )}
+                          </div>
+                        </article>
+                      );
+                    })}
+
+                    {/* Demandes locales (antérieures à l'intégration du suivi) */}
+                    {legacyPurchases.map((r) => (
+                      <article key={r.id} className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                        <header className="flex flex-wrap items-center gap-3 border-b border-gray-100 px-5 py-4">
+                          <div>
+                            <p className="font-mono text-xs font-bold text-navy-900">{refOf(r)}</p>
+                            <p className="mt-0.5 text-xs text-gray-500">Envoyée le {fmtDate(r.createdAt)}</p>
+                          </div>
+                          <span className="ml-auto">
+                            <LocalStatusBadge status={r.status} />
+                          </span>
+                        </header>
+                        <div className="p-5">
+                          <LandMini landId={r.landId} />
+                          {r.paymentMode && (
+                            <p className="mt-3 text-xs text-gray-500">
+                              Paiement souhaité : <strong className="font-semibold text-navy-900">{r.paymentMode}</strong>
+                            </p>
+                          )}
+                          <StageTrack
+                            steps={['Demande reçue', 'En traitement', 'Prise en charge']}
+                            current={r.status === 'nouveau' ? 1 : 2}
+                          />
                         </div>
-                      </RequestShell>
+                      </article>
                     ))}
                   </div>
                 )}
               </>
             )}
 
+            {/* ================= MES RECHERCHES ================= */}
             {active === 'searches' && (
               <>
-                <PanelTitle
+                <PageHead
                   eyebrow="Suivi"
                   title="Mes recherches"
-                  text="Vos critères personnalisés, pris en charge par notre équipe."
-                  action={<ActionLink to="/recherche"><Plus className="h-4 w-4" aria-hidden /> Nouvelle recherche</ActionLink>}
+                  text="Vos critères personnalisés et les terrains proposés par notre équipe."
+                  action={
+                    <button type="button" onClick={() => navigate('/recherche')} className={btnGold}>
+                      <Plus className="h-4 w-4" aria-hidden /> Nouvelle recherche
+                    </button>
+                  }
                 />
-                {bucket.searches.length === 0 ? (
-                  <div className="card-soft p-8">
-                    <EmptyState icon={Search} title="Aucune recherche confiée" text="Décrivez votre projet : nous cherchons pour vous." action="Confier ma recherche" onAction={() => navigate('/recherche')} />
-                  </div>
+                {crm.searches.length + bucket.searches.length === 0 ? (
+                  <EmptyBlock
+                    icon={Search}
+                    title="Aucune recherche confiée"
+                    text="Décrivez votre projet : nous cherchons pour vous."
+                    actionLabel="Confier ma recherche"
+                    onAction={() => navigate('/recherche')}
+                  />
                 ) : (
-                  <div className="space-y-5">
-                    {bucket.searches.map((r) => (
-                      <RequestShell key={r.id} r={r} dateWord="Créée">
-                        <h3 className="mt-4 text-lg font-bold text-navy-900">{r.projectName || 'Recherche de terrain'}</h3>
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {r.budget && <span className="rounded-full bg-navy-900/5 px-3 py-1 text-xs font-medium text-navy-900">{r.budget}</span>}
-                          {r.paymentMode && <span className="rounded-full bg-navy-900/5 px-3 py-1 text-xs font-medium text-navy-900">{r.paymentMode}</span>}
-                          {r.duration && <span className="rounded-full bg-navy-900/5 px-3 py-1 text-xs font-medium text-navy-900">Durée : {r.duration}</span>}
-                        </div>
-                        {r.message && (
-                          <details className="group mt-4">
-                            <summary className="cursor-pointer select-none text-xs font-semibold uppercase tracking-[0.2em] text-navy-900/85 hover:text-navy-900">
-                              Détails de la demande
-                            </summary>
-                            <p className="mt-3 whitespace-pre-line rounded-xl bg-mist px-4 py-3 text-xs leading-relaxed text-navy-900/85">{r.message}</p>
-                          </details>
-                        )}
-                        <div className="mt-5 flex flex-wrap gap-3">
-                          <ActionLink to="/terrains" variant="outline">Voir les terrains</ActionLink>
-                        </div>
-                      </RequestShell>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-
-            {active === 'lands' && (
-              <>
-                <PanelTitle
-                  eyebrow="Suivi"
-                  title="Terrains proposés"
-                  text="Suivez la vérification et la publication de vos terrains."
-                  action={<ActionLink to="/vendre"><Plus className="h-4 w-4" aria-hidden /> Proposer un terrain</ActionLink>}
-                />
-                {bucket.sells.length === 0 ? (
-                  <div className="card-soft p-8">
-                    <EmptyState icon={LandPlot} title="Aucun terrain proposé" text="Vous souhaitez vendre ? Confiez-nous votre terrain." action="Proposer un terrain" onAction={() => navigate('/vendre')} />
-                  </div>
-                ) : (
-                  <div className="space-y-5">
-                    {bucket.sells.map((r) => (
-                      <RequestShell key={r.id} r={r} dateWord="Soumis">
-                        <h3 className="mt-4 text-lg font-bold text-navy-900">{r.projectName || 'Terrain à vendre'}</h3>
-                        {r.budget && <p className="mt-1 text-sm text-navy-900/85">Prix demandé : <strong className="font-semibold">{r.budget}</strong></p>}
-                        {r.status === 'traité' ? (
-                          <p className="mt-4 flex items-start gap-3 rounded-xl bg-green-700/10 px-4 py-3 text-xs leading-relaxed text-navy-900/85">
-                            <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-700" aria-hidden />
-                            <span><strong className="font-bold">Dossier validé.</strong> Notre équipe vous contacte pour la suite de la publication.</span>
-                          </p>
-                        ) : (
-                          <p className="mt-4 flex items-start gap-3 rounded-xl bg-gold-500/10 px-4 py-3 text-xs leading-relaxed text-navy-900/85">
-                            <Clock className="mt-0.5 h-4 w-4 shrink-0 text-gold-700" aria-hidden />
-                            <span><strong className="font-bold">Vérification en cours.</strong> Notre équipe contrôle les documents transmis. Délai estimé : 2 à 5 jours ouvrés.</span>
-                          </p>
-                        )}
-                      </RequestShell>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-
-            {active === 'visits' && (
-              <>
-                <PanelTitle
-                  eyebrow="Suivi"
-                  title="Mes visites"
-                  text="Vos rendez-vous confirmés et passés."
-                  action={<ActionLink to="/terrains"><Plus className="h-4 w-4" aria-hidden /> Planifier une visite</ActionLink>}
-                />
-                {bucket.visits.length === 0 ? (
-                  <div className="card-soft p-8">
-                    <EmptyState icon={CalendarDays} title="Aucune visite" text="Demandez une visite depuis la fiche d’un terrain." action="Parcourir les terrains" onAction={() => navigate('/terrains')} />
-                  </div>
-                ) : (
-                  <div className="space-y-8">
-                    {upcoming.length > 0 && (
-                      <div className="space-y-5">
-                        <h3 className="text-xs font-semibold uppercase tracking-[0.24em] text-navy-900/70">À venir</h3>
-                        {upcoming.map((r) => (
-                          <RequestShell key={r.id} r={r} dateWord="Demandée">
-                            <p className="mt-4 flex flex-wrap items-center gap-2 text-sm font-semibold text-navy-900">
-                              <CalendarDays className="h-4 w-4 text-gold-700" aria-hidden />
-                              {r.visitDate ? fmtDate(r.visitDate) : 'Date à confirmer'}
-                              {r.visitTime && (
-                                <span className="flex items-center gap-1 text-xs font-normal text-navy-900/75">
-                                  <Clock className="h-3.5 w-3.5" aria-hidden />
-                                  {r.visitTime}
+                  <div className="grid gap-4 xl:grid-cols-2">
+                    {/* Recherches suivies dans le backoffice */}
+                    {crm.searches.map((s) => {
+                      const matches = searchMatches(s);
+                      return (
+                        <article key={s.id} className="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                          <header className="flex flex-wrap items-center gap-3 border-b border-gray-100 px-5 py-4">
+                            <div>
+                              <p className="font-mono text-xs font-bold text-navy-900">{s.ref}</p>
+                              <p className="mt-0.5 text-xs text-gray-500">Créée le {fmtDate(s.createdAt)}</p>
+                            </div>
+                            <span className="ml-auto">
+                              <StatusBadge value={s.status} />
+                            </span>
+                          </header>
+                          <div className="flex flex-1 flex-col p-5">
+                            <h3 className="text-base font-bold text-navy-900">
+                              {s.usage} autour de {s.mainZone.split(',')[0]}
+                            </h3>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-navy-900">
+                                <MapPin className="h-3 w-3 text-gray-400" aria-hidden />
+                                {s.mainZone}
+                                {s.radiusKm ? ` + ${s.radiusKm} km` : ''}
+                              </span>
+                              {(s.areaMin > 0 || s.areaMax > 0) && (
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-navy-900">
+                                  <LandPlot className="h-3 w-3 text-gray-400" aria-hidden />
+                                  {s.areaMin ? `${s.areaMin}–${s.areaMax || '∞'}` : `≤ ${s.areaMax}`} m²
                                 </span>
                               )}
-                            </p>
-                            <LandMini landId={r.landId} />
-                            <div className="mt-5">
-                              <button
-                                type="button"
-                                onClick={() => cancelVisit(r)}
-                                className="text-xs font-semibold text-navy-900/80 underline decoration-red-600/60 decoration-2 underline-offset-4 transition hover:text-red-700"
-                              >
-                                Annuler cette demande de visite
+                              {s.budgetMax > 0 && (
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-navy-900">
+                                  ≤ {formatAriary(s.budgetMax)}
+                                </span>
+                              )}
+                              {s.flexible === 'Oui' && (
+                                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-navy-900">Zone flexible</span>
+                              )}
+                            </div>
+
+                            {s.proposals.length > 0 && (
+                              <div className="mt-4 space-y-2.5">
+                                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Terrains proposés par notre équipe</p>
+                                {s.proposals.map((p) => {
+                                  const land = getLands().find((l) => l.id === p.landId);
+                                  return (
+                                    <div key={p.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3">
+                                      {land && <img src={land.imageUrl} alt="" className="h-12 w-16 shrink-0 rounded-lg object-cover" />}
+                                      <div className="min-w-0 flex-1">
+                                        <p className="truncate text-sm font-semibold text-navy-900">{land?.title ?? 'Terrain'}</p>
+                                        <p className="text-xs text-gray-500">{land ? `${formatArea(land.area)} • ${formatAriary(land.price)}` : p.note}</p>
+                                      </div>
+                                      <StatusBadge value={p.answer} />
+                                      {land && (
+                                        <Link to={`/terrains/${land.id}`} className={`${btnOutline} shrink-0`}>
+                                          Voir <ChevronRight className="h-4 w-4" aria-hidden />
+                                        </Link>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                            <div className="mt-auto flex flex-wrap items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3.5 pt-3.5">
+                              <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${TONES[matches > 0 ? 'amber' : 'gray']}`}>
+                                <Search className="h-4 w-4" aria-hidden />
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <strong className="block text-sm text-navy-900">
+                                  {matches} terrain{matches > 1 ? 's' : ''} correspondant{matches > 1 ? 's' : ''}
+                                </strong>
+                                <p className="text-xs text-gray-500">
+                                  {matches > 0 ? 'Dans notre catalogue actuel' : 'Notre équipe continue de chercher pour vous'}
+                                </p>
+                              </div>
+                              <button type="button" onClick={() => navigate('/terrains')} className={`${btnOutline} shrink-0`}>
+                                Voir les terrains <ChevronRight className="h-4 w-4" aria-hidden />
                               </button>
                             </div>
-                          </RequestShell>
-                        ))}
-                      </div>
-                    )}
-                    {pastVisits.length > 0 && (
-                      <div className="space-y-5">
-                        <h3 className="text-xs font-semibold uppercase tracking-[0.24em] text-navy-900/70">Passées</h3>
-                        {pastVisits.map((r) => (
-                          <RequestShell key={r.id} r={r} dateWord="Demandée">
-                            <p className="mt-4 flex flex-wrap items-center gap-2 text-sm font-semibold text-navy-900">
-                              <CalendarDays className="h-4 w-4 text-gold-700" aria-hidden />
-                              {r.visitDate ? fmtDate(r.visitDate) : '—'}
-                              {r.visitTime && (
-                                <span className="flex items-center gap-1 text-xs font-normal text-navy-900/75">
-                                  <Clock className="h-3.5 w-3.5" aria-hidden />
-                                  {r.visitTime}
-                                </span>
-                              )}
-                            </p>
-                            <LandMini landId={r.landId} />
-                          </RequestShell>
-                        ))}
-                      </div>
-                    )}
+                          </div>
+                        </article>
+                      );
+                    })}
+
+                    {/* Recherches locales (formulaire du site) */}
+                    {bucket.searches.map((r) => (
+                      <article key={r.id} className="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                        <header className="flex flex-wrap items-center gap-3 border-b border-gray-100 px-5 py-4">
+                          <div>
+                            <p className="font-mono text-xs font-bold text-navy-900">{refOf(r)}</p>
+                            <p className="mt-0.5 text-xs text-gray-500">Créée le {fmtDate(r.createdAt)}</p>
+                          </div>
+                          <span className="ml-auto">
+                            <LocalStatusBadge status={r.status} />
+                          </span>
+                        </header>
+                        <div className="flex flex-1 flex-col p-5">
+                          <h3 className="text-base font-bold text-navy-900">{r.projectName || 'Recherche de terrain'}</h3>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {r.budget && <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-navy-900">{r.budget}</span>}
+                            {r.paymentMode && <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-navy-900">{r.paymentMode}</span>}
+                            {r.duration && <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-navy-900">Durée : {r.duration}</span>}
+                          </div>
+                          {r.message && (
+                            <details className="group mt-4">
+                              <summary className="cursor-pointer select-none text-[11px] font-bold uppercase tracking-wider text-gray-400 transition hover:text-navy-900">
+                                Détails de la demande
+                              </summary>
+                              <p className="mt-2.5 whitespace-pre-line rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-xs leading-relaxed text-gray-600">
+                                {r.message}
+                              </p>
+                            </details>
+                          )}
+                          <div className="mt-auto pt-4">
+                            <button type="button" onClick={() => navigate('/terrains')} className={btnOutline}>
+                              Voir les terrains <ChevronRight className="h-4 w-4" aria-hidden />
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
                   </div>
                 )}
               </>
             )}
 
+            {/* ================= TERRAINS PROPOSÉS (VENTES) ================= */}
+            {active === 'lands' && (
+              <>
+                <PageHead
+                  eyebrow="Suivi"
+                  title="Mes terrains proposés"
+                  text="Suivez la vérification et la publication de vos terrains."
+                  action={
+                    <button type="button" onClick={() => navigate('/vendre')} className={btnGold}>
+                      <Plus className="h-4 w-4" aria-hidden /> Proposer un terrain
+                    </button>
+                  }
+                />
+                {bucket.sells.length === 0 ? (
+                  <EmptyBlock
+                    icon={LandPlot}
+                    title="Aucun terrain proposé"
+                    text="Vous souhaitez vendre ? Confiez-nous votre terrain."
+                    actionLabel="Proposer un terrain"
+                    onAction={() => navigate('/vendre')}
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    {bucket.sells.map((r) => (
+                      <article key={r.id} className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                        <header className="flex flex-wrap items-center gap-3 border-b border-gray-100 px-5 py-4">
+                          <div>
+                            <p className="font-mono text-xs font-bold text-navy-900">{refOf(r)}</p>
+                            <p className="mt-0.5 text-xs text-gray-500">Soumis le {fmtDate(r.createdAt)}</p>
+                          </div>
+                          <span className="ml-auto">
+                            <LocalStatusBadge status={r.status} />
+                          </span>
+                        </header>
+                        <div className="p-5">
+                          <div className="flex items-center gap-4 rounded-xl border border-gray-100 bg-gray-50 p-3.5">
+                            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-purple-100 text-purple-800">
+                              <LandPlot className="h-5 w-5" aria-hidden />
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <strong className="block text-sm font-semibold text-navy-900">{r.projectName || 'Terrain à vendre'}</strong>
+                              {r.budget && <p className="text-xs text-gray-500">Prix demandé : {r.budget}</p>}
+                            </div>
+                          </div>
+                          {r.status === 'traité' ? (
+                            <p className="mt-4 flex items-start gap-2.5 rounded-xl bg-green-50 px-4 py-3 text-xs leading-relaxed text-green-800">
+                              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                              <span>
+                                <strong className="font-bold">Dossier validé.</strong> Notre équipe vous contacte pour la suite de la publication.
+                              </span>
+                            </p>
+                          ) : (
+                            <p className="mt-4 flex items-start gap-2.5 rounded-xl bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-800">
+                              <Clock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                              <span>
+                                <strong className="font-bold">Vérification en cours.</strong> Notre équipe contrôle les documents transmis. Délai estimé : 2 à 5 jours ouvrés.
+                              </span>
+                            </p>
+                          )}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* ================= MES VISITES ================= */}
+            {active === 'visits' && (
+              <>
+                <PageHead
+                  eyebrow="Suivi"
+                  title="Mes visites"
+                  text="Gérez vos rendez-vous confirmés et passés."
+                  action={
+                    <button type="button" onClick={() => navigate('/terrains')} className={btnGold}>
+                      <Plus className="h-4 w-4" aria-hidden /> Planifier une visite
+                    </button>
+                  }
+                />
+                {visits.length === 0 ? (
+                  <EmptyBlock
+                    icon={CalendarDays}
+                    title="Aucune visite"
+                    text="Demandez une visite depuis la fiche d’un terrain."
+                    actionLabel="Parcourir les terrains"
+                    onAction={() => navigate('/terrains')}
+                  />
+                ) : (
+                  <>
+                    <div className="mb-5 flex flex-wrap gap-1.5">
+                      {([
+                        { id: 'upcoming', label: `À venir (${upcomingVisits.length})` },
+                        { id: 'past', label: `Passées (${pastVisits.length})` },
+                      ] as const).map((t) => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => setVisitFilter(t.id)}
+                          className={`rounded-lg border px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                            visitFilter === t.id ? 'border-navy-900 bg-navy-900 text-white' : 'border-gray-300 bg-white text-gray-700 hover:border-navy-900'
+                          }`}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {visitFilter === 'upcoming' && upcomingVisits.length === 0 && (
+                      <EmptyBlock icon={CalendarDays} title="Aucune visite à venir" text="Vos prochains rendez-vous apparaîtront ici." />
+                    )}
+                    {visitFilter === 'past' && pastVisits.length === 0 && (
+                      <EmptyBlock icon={CalendarDays} title="Aucune visite passée" text="Votre historique de visites apparaîtra ici." />
+                    )}
+
+                    <div className="space-y-4">
+                      {(visitFilter === 'upcoming' ? upcomingVisits : pastVisits).map((v) => {
+                        const reservation = bucket.visits.find((r) => r.id === v.key);
+                        const land = getLands().find((l) => String(l.id) === String(v.landId));
+                        return (
+                          <article key={v.key} className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                            <div className="flex flex-wrap items-center gap-5 p-5">
+                              <div className="grid h-20 w-20 shrink-0 place-items-center rounded-xl bg-navy-900 text-white">
+                                <strong className="text-2xl font-bold leading-none">{parseDate(v.when).getDate()}</strong>
+                                <small className="text-[10px] uppercase tracking-wide text-gold-500">
+                                  {parseDate(v.when).toLocaleDateString('fr-FR', { month: 'short' })}
+                                </small>
+                              </div>
+                              {land && <img src={land.imageUrl} alt="" className="hidden h-20 w-32 shrink-0 rounded-xl object-cover sm:block" />}
+                              <div className="min-w-0 flex-1">
+                                {v.source === 'crm' ? (
+                                  <StatusBadge value="Visite programmée" tone="amber" />
+                                ) : (
+                                  <LocalStatusBadge status={reservation?.status ?? 'nouveau'} />
+                                )}
+                                <h3 className="mt-2 truncate text-base font-bold text-navy-900">{land?.title ?? 'Visite de terrain'}</h3>
+                                <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
+                                  <span className="flex items-center gap-1.5">
+                                    <MapPin className="h-3.5 w-3.5" aria-hidden /> {land?.location ?? 'Localisation à préciser'}
+                                  </span>
+                                  <span className="flex items-center gap-1.5">
+                                    <Clock className="h-3.5 w-3.5" aria-hidden />
+                                    {v.time ?? (v.source === 'crm' ? fmtTime(v.when) : 'Heure à confirmer')}
+                                  </span>
+                                </p>
+                                <p className="mt-1 font-mono text-[11px] text-gray-400">Dossier {v.ref}</p>
+                              </div>
+                              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                                {land && (
+                                  <Link to={`/terrains/${land.id}`} className={btnOutline}>
+                                    Voir le terrain
+                                  </Link>
+                                )}
+                                {reservation && visitFilter === 'upcoming' && (
+                                  <button
+                                    type="button"
+                                    onClick={() => cancelVisit(reservation)}
+                                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-3.5 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50"
+                                  >
+                                    Annuler
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </article>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+
+            {/* ================= FAVORIS ================= */}
             {active === 'favorites' && (
               <>
-                <PanelTitle eyebrow="Ma sélection" title="Favoris" text="Les terrains que vous avez mis de côté." action={<ActionLink to="/terrains" variant="outline">Parcourir les terrains</ActionLink>} />
+                <PageHead
+                  eyebrow="Ma sélection"
+                  title="Favoris"
+                  text="Les terrains que vous avez mis de côté."
+                  action={
+                    <button type="button" onClick={() => navigate('/terrains')} className={btnOutline}>
+                      Parcourir les terrains
+                    </button>
+                  }
+                />
                 {favLands.length === 0 ? (
-                  <div className="card-soft p-8">
-                    <EmptyState icon={Heart} title="Aucun favori" text="Cliquez sur le cœur d’un terrain pour le retrouver ici." action="Parcourir les terrains" onAction={() => navigate('/terrains')} />
-                  </div>
+                  <EmptyBlock
+                    icon={Heart}
+                    title="Aucun favori"
+                    text="Cliquez sur le cœur d’un terrain pour le retrouver ici."
+                    actionLabel="Parcourir les terrains"
+                    onAction={() => navigate('/terrains')}
+                  />
                 ) : (
                   <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                     {favLands.map((l) => (
@@ -752,101 +1236,104 @@ export default function Account() {
               </>
             )}
 
+            {/* ================= NOTIFICATIONS ================= */}
             {active === 'notifications' && (
               <>
-                <PanelTitle
+                <PageHead
                   eyebrow="Activité"
                   title="Notifications"
                   text="Restez informé de l’avancement de tous vos projets."
                   action={
                     unread > 0 ? (
-                      <button
-                        type="button"
-                        onClick={markAllRead}
-                        className="text-xs font-semibold text-navy-900 underline decoration-gold-500 decoration-2 underline-offset-4 transition hover:text-gold-700"
-                      >
-                        Tout marquer comme lu
+                      <button type="button" onClick={markAllRead} className={btnOutline}>
+                        <Check className="h-4 w-4" aria-hidden /> Tout marquer comme lu
                       </button>
                     ) : undefined
                   }
                 />
-                {events.length === 0 ? (
-                  <div className="card-soft p-8">
-                    <EmptyState icon={Bell} title="Aucune notification" text="Les mises à jour de vos projets apparaîtront ici." />
-                  </div>
+                {notifs.length === 0 ? (
+                  <EmptyBlock icon={Bell} title="Aucune notification" text="Les mises à jour de vos projets apparaîtront ici." />
                 ) : (
-                  <ul className="card-soft divide-y divide-navy-900/8 p-2">
-                    {events.map((e) => {
-                      const Icon = eventIcons[e.type];
-                      const isUnread = !readKeys.includes(e.key);
-                      return (
-                        <li key={e.key} className={`flex items-start gap-4 rounded-xl px-4 py-4 ${isUnread ? 'bg-gold-500/5' : ''}`}>
-                          <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${isUnread ? 'bg-gold-500/20 text-gold-700' : 'bg-navy-900/5 text-navy-900'}`}>
-                            <Icon className="h-4 w-4" aria-hidden />
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-bold text-navy-900">{e.title}</p>
-                            <p className="mt-0.5 text-xs leading-relaxed text-navy-900/75">{e.text}</p>
-                            <p className="mt-1 text-xs text-navy-900/60">{fmtShort(e.date)}</p>
-                          </div>
-                          {isUnread && <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-gold-500" aria-label="Non lue" />}
-                        </li>
-                      );
-                    })}
-                  </ul>
+                  <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                    <ul className="divide-y divide-gray-100">
+                      {notifs.map((n) => {
+                        const Icon = notifIcon[n.kind];
+                        const isUnread = !readKeys.includes(n.key);
+                        return (
+                          <li key={n.key} className={`flex items-start gap-4 px-5 py-4 ${isUnread ? 'bg-gold-500/5' : ''}`}>
+                            <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${TONES[notifTone[n.kind]]}`}>
+                              <Icon className="h-4 w-4" aria-hidden />
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-semibold text-navy-900">{n.title}</p>
+                              <p className="mt-0.5 text-xs leading-relaxed text-gray-500">{n.text}</p>
+                              <p className="mt-1 text-[11px] text-gray-400">{fmtShort(n.at)}</p>
+                            </div>
+                            {isUnread && <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-gold-500" aria-label="Non lue" />}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
                 )}
               </>
             )}
 
+            {/* ================= PROFIL ET SÉCURITÉ ================= */}
             {active === 'profile' && (
               <>
-                <PanelTitle eyebrow="Mon compte" title="Profil et sécurité" text="Gérez vos informations personnelles et votre mot de passe." action={
-                  <button type="button" onClick={openEdit} className="inline-flex shrink-0 items-center gap-2 rounded-full border border-navy-900/40 px-5 py-2.5 text-xs font-semibold text-navy-900 transition hover:bg-navy-900 hover:text-white">
-                    <Pencil className="h-4 w-4" aria-hidden /> Modifier
-                  </button>
-                } />
-                <div className="grid gap-5 lg:grid-cols-5">
-                  <section className="card-soft p-6 sm:p-7 lg:col-span-2">
-                    <div className="flex flex-col items-center text-center">
-                      <span className="grid h-20 w-20 place-items-center rounded-full bg-navy-900 text-2xl font-extrabold text-gold-500 ring-2 ring-gold-500/60">
+                <PageHead
+                  eyebrow="Mon compte"
+                  title="Profil et sécurité"
+                  text="Gérez vos informations personnelles et votre mot de passe."
+                  action={
+                    <button type="button" onClick={openEdit} className={btnOutline}>
+                      <Pencil className="h-4 w-4" aria-hidden /> Modifier
+                    </button>
+                  }
+                />
+                <div className="grid gap-4 lg:grid-cols-5">
+                  <Card className="lg:col-span-2">
+                    <div className="flex flex-col items-center py-4 text-center">
+                      <span className="grid h-24 w-24 place-items-center rounded-full bg-navy-900 text-2xl font-extrabold text-gold-500 ring-4 ring-gold-500/20">
                         {initials}
                       </span>
-                      <h3 className="mt-4 text-xl font-bold text-navy-900">{user.fullName}</h3>
-                      <p className="mt-1 text-xs text-navy-900/75">Compte créé le {fmtDate(user.createdAt)}</p>
-                      <p className="mt-4 flex items-center gap-2 rounded-full bg-green-700/10 px-4 py-2 text-xs font-semibold text-green-700">
-                        <ShieldCheck className="h-4 w-4" aria-hidden /> Connecté(e) à votre espace
+                      <h3 className="mt-4 text-lg font-bold text-navy-900">{user.fullName}</h3>
+                      <p className="mt-1 text-xs text-gray-500">Membre depuis {fmtDate(user.createdAt)}</p>
+                      <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-green-100 px-4 py-1.5 text-xs font-semibold text-green-800">
+                        <ShieldCheck className="h-3.5 w-3.5" aria-hidden /> Compte vérifié
                       </p>
                     </div>
-                  </section>
-                  <section className="card-soft p-6 sm:p-7 lg:col-span-3">
-                    <h3 className="text-lg font-bold text-navy-900">Informations personnelles</h3>
-                    <dl className="mt-5 space-y-4">
-                      <div className="flex items-center gap-3">
-                        <Mail className="h-4 w-4 shrink-0 text-gold-700" aria-hidden />
-                        <dt className="text-xs text-navy-900/75">Adresse email</dt>
-                        <dd className="ml-auto truncate text-sm font-semibold text-navy-900">{user.email}</dd>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Phone className="h-4 w-4 shrink-0 text-gold-700" aria-hidden />
-                        <dt className="text-xs text-navy-900/75">Téléphone</dt>
-                        <dd className="ml-auto truncate text-sm font-semibold text-navy-900">{user.phone || '—'}</dd>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <UserRound className="h-4 w-4 shrink-0 text-gold-700" aria-hidden />
-                        <dt className="text-xs text-navy-900/75">Nom complet</dt>
-                        <dd className="ml-auto truncate text-sm font-semibold text-navy-900">{user.fullName}</dd>
-                      </div>
+                  </Card>
+
+                  <Card title="Informations personnelles" icon={<UserRound className="h-4 w-4" />} className="lg:col-span-3">
+                    <dl className="divide-y divide-gray-100">
+                      {[
+                        { icon: Mail, label: 'Adresse email', value: user.email },
+                        { icon: Phone, label: 'Téléphone', value: user.phone || '—' },
+                        { icon: UserRound, label: 'Nom complet', value: user.fullName },
+                        { icon: CalendarDays, label: 'Compte créé le', value: fmtDate(user.createdAt) },
+                      ].map((row) => {
+                        const Icon = row.icon;
+                        return (
+                          <div key={row.label} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                            <Icon className="h-4 w-4 shrink-0 text-gold-600" aria-hidden />
+                            <dt className="text-xs text-gray-500">{row.label}</dt>
+                            <dd className="ml-auto truncate text-sm font-semibold text-navy-900">{row.value}</dd>
+                          </div>
+                        );
+                      })}
                     </dl>
-                  </section>
-                  <section className="card-soft p-6 sm:p-7 lg:col-span-5">
-                    <h3 className="text-lg font-bold text-navy-900">Sécurité</h3>
-                    <div className="mt-5 flex flex-wrap items-center gap-4">
-                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-navy-900/5 text-navy-900">
+                  </Card>
+
+                  <Card title="Sécurité" icon={<ShieldCheck className="h-4 w-4" />} className="lg:col-span-5">
+                    <div className="flex flex-wrap items-center gap-4 py-1">
+                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gray-100 text-navy-900">
                         <KeyRound className="h-5 w-5" aria-hidden />
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold text-navy-900">Mot de passe</p>
-                        <p className="text-xs text-navy-900/75">Choisissez un mot de passe d’au moins 6 caractères.</p>
+                        <p className="text-sm font-semibold text-navy-900">Mot de passe</p>
+                        <p className="text-xs text-gray-500">Choisissez un mot de passe d’au moins 6 caractères.</p>
                       </div>
                       <button
                         type="button"
@@ -854,12 +1341,24 @@ export default function Account() {
                           setPwError(null);
                           setPwOpen(true);
                         }}
-                        className="inline-flex shrink-0 items-center gap-2 rounded-full border border-navy-900/40 px-5 py-2.5 text-xs font-semibold text-navy-900 transition hover:bg-navy-900 hover:text-white"
+                        className={`${btnOutline} shrink-0`}
                       >
                         Changer
                       </button>
                     </div>
-                  </section>
+                    <div className="mt-2 flex flex-wrap items-center gap-4 border-t border-gray-100 pt-4">
+                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gray-100 text-navy-900">
+                        <Bell className="h-5 w-5" aria-hidden />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-navy-900">Notifications</p>
+                        <p className="text-xs text-gray-500">Les avancées de vos dossiers, réunies au même endroit.</p>
+                      </div>
+                      <button type="button" onClick={() => setTab('notifications')} className={`${btnOutline} shrink-0`}>
+                        Gérer
+                      </button>
+                    </div>
+                  </Card>
                 </div>
               </>
             )}
@@ -885,10 +1384,10 @@ export default function Account() {
           </FormField>
         </div>
         <div className="mt-7 flex flex-wrap justify-end gap-3">
-          <button type="button" onClick={() => setEditOpen(false)} className="btn-ghost">
+          <button type="button" onClick={() => setEditOpen(false)} className="inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100">
             Annuler
           </button>
-          <button type="button" onClick={saveEdit} className="btn-gold">
+          <button type="button" onClick={saveEdit} className={btnGold}>
             Enregistrer
           </button>
         </div>
@@ -909,18 +1408,18 @@ export default function Account() {
           </FormField>
         </div>
         <div className="mt-7 flex flex-wrap justify-end gap-3">
-          <button type="button" onClick={() => setPwOpen(false)} className="btn-ghost">
+          <button type="button" onClick={() => setPwOpen(false)} className="inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100">
             Annuler
           </button>
-          <button type="button" onClick={savePassword} className="btn-gold">
+          <button type="button" onClick={savePassword} className={btnGold}>
             Mettre à jour
           </button>
         </div>
       </Modal>
 
       {toast && (
-        <div role="status" className="fixed bottom-6 right-6 z-[120] flex items-center gap-3 rounded-2xl bg-navy-900 px-5 py-4 text-white shadow-2xl">
-          <Check className="h-5 w-5 shrink-0 text-gold-500" aria-hidden />
+        <div role="status" className="fixed bottom-6 right-6 z-[120] flex items-center gap-3 rounded-xl bg-navy-900 px-5 py-4 text-white shadow-2xl">
+          <CheckCircle2 className="h-5 w-5 shrink-0 text-gold-500" aria-hidden />
           <p className="text-sm font-medium">{toast}</p>
         </div>
       )}

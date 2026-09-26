@@ -52,12 +52,13 @@ export default function App() {
           {/* Contact (formulaire) supprimé : « Nous contacter » ouvre WhatsApp directement */}
           <Route path="/contact" element={<Navigate to="/" replace />} />
           <Route path="/connexion" element={<Auth />} />
-          <Route path="/compte" element={<Account />} />
           <Route path="/vendre" element={<Sell />} />
           <Route path="/reservation" element={<Navigate to="/vendre" replace />} />
           <Route path="/realisations" element={<Realisations />} />
           <Route path="*" element={<NotFound />} />
         </Route>
+        {/* Espace client : plein écran, même gabarit que le backoffice */}
+        <Route path="/compte" element={<Account />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
