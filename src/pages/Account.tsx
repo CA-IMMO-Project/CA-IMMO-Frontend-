@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   ChevronRight,
   Clock,
-  ExternalLink,
   FileText,
   Heart,
   KeyRound,
@@ -599,9 +598,7 @@ export default function Account() {
         </nav>
 
         <div className="shrink-0 space-y-1 border-t border-white/10 p-4">
-          <Link to="/" className="flex items-center gap-3 rounded-lg px-4 py-2 text-sm text-white/75 transition-colors hover:bg-white/10 hover:text-white">
-            <ExternalLink className="h-4 w-4" aria-hidden /> Retour au site
-          </Link>
+          {/* Seule la déconnexion ramène au site public — l'espace client est fermé. */}
           <button
             type="button"
             onClick={() => {

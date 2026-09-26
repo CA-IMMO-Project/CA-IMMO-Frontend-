@@ -11,7 +11,7 @@ interface LandCardProps {
 
 export default function LandCard({ land, horizontal = false }: LandCardProps) {
   const full = normalizeLand(land);
-  const { isFavorite, toggleFavorite } = useFavorites();
+  const { isFavorite, toggleFavorite, enabled } = useFavorites();
   const fav = isFavorite(land.id);
 
   return (
@@ -29,18 +29,20 @@ export default function LandCard({ land, horizontal = false }: LandCardProps) {
           referrerPolicy="no-referrer"
         />
 
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            toggleFavorite(land.id);
-          }}
-          aria-label={fav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
-          className={`absolute right-4 top-4 z-10 grid h-9 w-9 place-items-center rounded-full bg-white/90 backdrop-blur-sm transition ${
-            fav ? 'text-gold-700' : 'text-navy-900/80 hover:text-navy-900'
-          }`}
-        >
-          <Heart className="h-4 w-4" fill={fav ? 'currentColor' : 'none'} />
-        </button>
+        {enabled && (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              toggleFavorite(land.id);
+            }}
+            aria-label={fav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+            className={`absolute right-4 top-4 z-10 grid h-9 w-9 place-items-center rounded-full bg-white/90 backdrop-blur-sm transition ${
+              fav ? 'text-gold-700' : 'text-navy-900/80 hover:text-navy-900'
+            }`}
+          >
+            <Heart className="h-4 w-4" fill={fav ? 'currentColor' : 'none'} />
+          </button>
+        )}
 
         <div className="absolute bottom-4 left-4 rounded-2xl bg-white/95 px-4 py-2.5 shadow-lg shadow-navy-900/10 backdrop-blur-md">
           <div className="text-lg font-extrabold leading-none tracking-tight text-navy-900">{formatAriary(land.price)}</div>

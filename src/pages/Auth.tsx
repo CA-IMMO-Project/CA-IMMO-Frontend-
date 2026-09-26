@@ -1,6 +1,6 @@
-import { Link, useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ArrowRight, Bell, CalendarDays, Heart, LogOut, Search, ShieldCheck } from 'lucide-react';
+import { Bell, CalendarDays, Heart, Search } from 'lucide-react';
 import { AuthForm } from '../components/AuthModule';
 import { useAuth } from '../lib/auth';
 
@@ -14,7 +14,11 @@ const benefits = [
 export default function Auth() {
   const [params] = useSearchParams();
   const initialMode = params.get('mode') === 'login' ? 'login' : 'register';
-  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Connexion / inscription réussie (ou compte déjà actif) : direction l'espace client.
+  if (user) return <Navigate to="/compte" replace />;
 
   return (
     <div className="font-display overflow-hidden bg-mist">
@@ -37,37 +41,15 @@ export default function Auth() {
             className="order-1 lg:order-2 lg:col-span-5"
           >
             <div className="card-soft p-7 text-navy-900 sm:p-9">
-              {user ? (
-                <div className="flex flex-col items-center py-4 text-center">
-                  <span className="grid h-16 w-16 place-items-center rounded-full bg-navy-900 text-xl font-extrabold text-gold-500">
-                    {user.firstName.charAt(0).toUpperCase() || 'C'}
-                    {user.lastName.charAt(0).toUpperCase()}
-                  </span>
-                  <h2 className="mt-5 text-2xl font-bold tracking-tight text-navy-900">Bienvenue, {user.firstName} !</h2>
-                  <p className="mt-2 text-sm text-navy-900/85">{user.email}</p>
-                  <p className="mt-6 flex items-start gap-2.5 rounded-2xl bg-brand-accent/5 px-5 py-4 text-left text-xs leading-relaxed text-navy-900/85">
-                    <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-green-700" />
-                    Retrouvez le suivi de vos demandes, visites et recherches — enregistrées et traitées par notre équipe.
-                  </p>
-                  <Link to="/compte" className="btn-gold mt-7 w-full">
-                    Accéder à mon espace <ArrowRight className="h-4 w-4" />
-                  </Link>
-                  <Link to="/terrains" className="btn-outline mt-3 w-full">
-                    Parcourir les terrains
-                  </Link>
-                  <button onClick={logout} className="btn-ghost mt-3 w-full">
-                    <LogOut className="h-4 w-4" /> Se déconnecter
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <h2 className="text-2xl font-bold tracking-tight text-navy-900">Bienvenue</h2>
-                  <p className="mt-1 text-sm text-navy-900/85">Créez votre compte ou connectez-vous.</p>
-                  <div className="mt-6">
-                    <AuthForm initialMode={initialMode} onSuccess={() => {}} submitLabels={{ register: 'Créer mon compte', login: 'Se connecter' }} />
-                  </div>
-                </>
-              )}
+              <h2 className="text-2xl font-bold tracking-tight text-navy-900">Bienvenue</h2>
+              <p className="mt-1 text-sm text-navy-900/85">Créez votre compte ou connectez-vous pour accéder à votre espace.</p>
+              <div className="mt-6">
+                <AuthForm
+                  initialMode={initialMode}
+                  onSuccess={() => navigate('/compte', { replace: true })}
+                  submitLabels={{ register: 'Créer mon compte', login: 'Se connecter' }}
+                />
+              </div>
             </div>
           </motion.div>
 

@@ -409,7 +409,7 @@ export default function LandDetail() {
   const navigate = useNavigate();
   const [land, setLand] = useState<Land | null | undefined>(undefined);
   const [related, setRelated] = useState<Land[]>([]);
-  const { isFavorite, toggleFavorite } = useFavorites();
+  const { isFavorite, toggleFavorite, enabled } = useFavorites();
 
   const [lightbox, setLightbox] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
@@ -519,13 +519,15 @@ export default function LandDetail() {
             <ArrowLeft className="h-4 w-4" /> Retour aux terrains
           </button>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => toggleFavorite(land.id)}
-              className={`btn-outline !px-5 !py-2.5 !text-xs ${fav ? '!border-gold-500 !text-gold-700' : ''}`}
-            >
-              <Heart className="h-4 w-4" fill={fav ? 'currentColor' : 'none'} />
-              {fav ? 'Enregistré' : 'Enregistrer'}
-            </button>
+            {enabled && (
+              <button
+                onClick={() => toggleFavorite(land.id)}
+                className={`btn-outline !px-5 !py-2.5 !text-xs ${fav ? '!border-gold-500 !text-gold-700' : ''}`}
+              >
+                <Heart className="h-4 w-4" fill={fav ? 'currentColor' : 'none'} />
+                {fav ? 'Enregistré' : 'Enregistrer'}
+              </button>
+            )}
             <button onClick={share} className="btn-outline !px-5 !py-2.5 !text-xs">
               <Share2 className="h-4 w-4" />
               {shared ? 'Lien copié !' : 'Partager'}
