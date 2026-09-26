@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import {
@@ -6,12 +6,12 @@ import {
   LandPlot, Search, HandCoins, Repeat, Building2, Wallet, Cpu, View, MonitorPlay,
   Globe, Eye, Star, HeartHandshake, Tag, Ruler,
 } from 'lucide-react';
-import { PHONE_1_TEL } from '../lib/contact';
+import { PHONE_1_TEL, WHATSAPP_URL } from '../lib/contact';
 
-const IMG_HERO = 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=1800&q=80';
-const IMG_LOTS = 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=80';
-const IMG_AERIAL = 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1400&q=80';
-const IMG_SUNSET = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80';
+const IMG_HERO = '/media/terrains/highlands.jpg';
+const IMG_LOTS = '/media/terrains/plaine.jpg';
+const IMG_AERIAL = '/media/terrains/colline.jpg';
+const IMG_SUNSET = '/media/terrains/littoral.jpg';
 
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
@@ -72,6 +72,7 @@ function GoldButton({ to, children, small = false }: { to: string; children: Rea
 }
 
 export default function Home() {
+  const reduce = useReducedMotion();
   return (
     <div className="font-display overflow-hidden bg-white">
       {/* ================= HERO ================= */}
@@ -89,7 +90,7 @@ export default function Home() {
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-20 pb-40 md:pt-24 md:pb-44">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="max-w-xl">
             <Eyebrow light><span className="text-xl md:text-2xl font-medium">Bienvenue chez</span></Eyebrow>
-            <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold leading-none tracking-tight mb-5">
+            <h1 className="text-5xl md:text-7xl font-extrabold leading-none tracking-tight mb-5">
               CA <span className="text-gold-500">Immo</span>
             </h1>
             <p className="text-xl md:text-2xl font-semibold mb-6">Votre projet immobilier, notre engagement.</p>
@@ -98,12 +99,12 @@ export default function Home() {
               recherche de terrain, lotissement et acquisition de maisons clé en main.
             </p>
             <div className="flex flex-wrap gap-4">
-              <GoldButton to="/acheter">Découvrir nos biens</GoldButton>
+              <GoldButton to="/terrains">Découvrir nos biens</GoldButton>
               <a
                 href={PHONE_1_TEL}
                 className="inline-flex items-center gap-2 rounded-full border border-white/60 px-7 py-3.5 text-sm font-medium transition hover:bg-white hover:text-navy-900"
               >
-                <Phone className="w-4 h-4" /> Parler à un conseiller
+                <Phone className="w-4 h-4" /> Parler à notre équipe
               </a>
             </div>
           </motion.div>
@@ -113,7 +114,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.4 }}
-            className="mt-14 lg:absolute lg:right-8 lg:bottom-20 lg:mt-0 grid grid-cols-3 sm:grid-cols-5 gap-y-6 lg:divide-x lg:divide-white/25"
+            className="mt-14 lg:absolute lg:right-8 lg:bottom-20 lg:mt-0 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-y-6 lg:divide-x lg:divide-white/25"
           >
             {[
               { icon: Award, label: '+12 ans\nd’expérience' },
@@ -123,7 +124,7 @@ export default function Home() {
               { icon: ShieldCheck, label: 'Sécurité\nfoncière' },
             ].map(({ icon: Icon, label }) => (
               <div key={label} className="flex flex-col items-center text-center px-4 xl:px-6">
-                <Icon className="w-9 h-9 text-gold-500 mb-2" strokeWidth={1.6} />
+                <Icon className="w-9 h-9 text-gold-500 mb-2" strokeWidth={2} />
                 <span className="whitespace-pre-line text-xs font-semibold leading-tight">{label}</span>
               </div>
             ))}
@@ -137,7 +138,7 @@ export default function Home() {
       </section>
 
       {/* ================= EN QUELQUES MOTS ================= */}
-      <section className="relative bg-white py-16 md:py-20">
+      <section className="relative bg-white py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid gap-12 lg:grid-cols-12 items-center">
           <motion.div {...fadeUp} className="lg:col-span-4 relative mx-auto w-full max-w-sm">
             <div className="absolute -left-4 top-6 bottom-0 right-10 rounded-[2rem] bg-gold-500 -rotate-6" />
@@ -179,7 +180,7 @@ export default function Home() {
                 { icon: HandCoins, label: 'Vente de terrain' },
               ].map(({ icon: Icon, label }) => (
                 <li key={label} className="flex items-center gap-4 text-sm text-navy-900">
-                  <Icon className="w-5 h-5 text-gold-600" /> {label}
+                  <Icon className="w-5 h-5 text-gold-700" /> {label}
                 </li>
               ))}
             </ul>
@@ -188,7 +189,7 @@ export default function Home() {
       </section>
 
       {/* ================= OBJECTIF ================= */}
-      <section className="relative bg-mist py-16 md:py-20">
+      <section className="relative bg-mist py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid gap-10 lg:grid-cols-12 items-center">
           <motion.div {...fadeUp} className="lg:col-span-4">
             <Eyebrow>Notre objectif</Eyebrow>
@@ -197,7 +198,7 @@ export default function Home() {
               Que vous souhaitiez acheter, vendre ou trouver un terrain sur mesure, nous sommes là pour vous guider et vous
               apporter des solutions adaptées à vos besoins.
             </p>
-            <GoldButton to="/contact" small>En savoir plus</GoldButton>
+            <GoldButton to="/about" small>En savoir plus</GoldButton>
           </motion.div>
 
           <div className="lg:col-span-8 grid gap-5 sm:grid-cols-3">
@@ -249,7 +250,7 @@ export default function Home() {
               { icon: Cpu, title: 'Technologie & innovation', text: 'Drones, visite virtuelle et outils numériques pour découvrir un bien où que vous soyez.' },
             ].map(({ icon: Icon, title, text }) => (
               <motion.div key={title} {...fadeUp}>
-                <Icon className="w-8 h-8 text-gold-500 mb-3" strokeWidth={1.6} />
+                <Icon className="w-8 h-8 text-gold-500 mb-3" strokeWidth={2} />
                 <h3 className="font-semibold mb-2">{title}</h3>
                 <p className="text-xs text-white/65 leading-relaxed">{text}</p>
               </motion.div>
@@ -261,7 +262,7 @@ export default function Home() {
       {/* ================= A DISTANCE ================= */}
       <section className="relative bg-white">
         <div className="mx-auto max-w-7xl grid lg:grid-cols-2 items-center">
-          <motion.div {...fadeUp} className="px-4 sm:px-6 lg:px-8 py-16 md:py-20">
+          <motion.div {...fadeUp} className="px-4 sm:px-6 lg:px-8 py-16 md:py-24">
             <Eyebrow>L’immobilier, même à distance</Eyebrow>
             <h2 className="text-3xl font-bold text-navy-900 leading-tight mb-4">
               Vous êtes à l’étranger ?<br />Votre projet reste à portée de main.
@@ -283,7 +284,7 @@ export default function Home() {
                 </div>
               ))}
             </div>
-            <GoldButton to="/acheter" small>Voir nos solutions</GoldButton>
+            <GoldButton to="/terrains" small>Voir nos solutions</GoldButton>
           </motion.div>
 
           <motion.div {...fadeUp} className="relative h-80 lg:h-full min-h-[380px]">
@@ -292,20 +293,20 @@ export default function Home() {
             {/* Drones en vol */}
             <motion.div
               className="absolute left-[8%] top-[10%] w-32 md:w-40 text-navy-950 drop-shadow-[0_12px_12px_rgba(7,22,52,0.45)]"
-              animate={{ y: [0, -14, 0], rotate: [-3, 2, -3] }}
+              animate={reduce ? undefined : { y: [0, -14, 0], rotate: [-3, 2, -3] }}
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
             >
               <DroneIcon spin className="w-full h-auto" />
             </motion.div>
             <motion.div
               className="absolute left-[40%] bottom-[12%] w-16 md:w-20 text-navy-900/90 drop-shadow-[0_8px_8px_rgba(7,22,52,0.4)]"
-              animate={{ x: [0, 24, 0], y: [0, -8, 0], rotate: [2, -3, 2] }}
+              animate={reduce ? undefined : { x: [0, 24, 0], y: [0, -8, 0], rotate: [2, -3, 2] }}
               transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
             >
               <DroneIcon spin className="w-full h-auto" />
             </motion.div>
             <div className="absolute right-4 top-1/2 -translate-y-1/2 w-60 rounded-3xl rounded-bl-none bg-navy-900 p-6 text-white shadow-2xl">
-              <Globe className="w-8 h-8 text-gold-500 mb-4" strokeWidth={1.6} />
+              <Globe className="w-8 h-8 text-gold-500 mb-4" strokeWidth={2} />
               <p className="font-semibold leading-snug">
                 Votre projet immobilier à Madagascar, <span className="text-gold-500">où que vous soyez.</span>
               </p>
@@ -315,7 +316,7 @@ export default function Home() {
       </section>
 
       {/* ================= ENGAGEMENTS ================= */}
-      <section className="bg-mist py-16 md:py-20">
+      <section className="bg-mist py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid gap-10 lg:grid-cols-12 items-center">
           <motion.div {...fadeUp} className="lg:col-span-3">
             <Eyebrow>Nos engagements</Eyebrow>
@@ -336,7 +337,7 @@ export default function Home() {
                   <Icon className="w-5 h-5" />
                 </span>
                 <h3 className="text-sm font-bold text-navy-900 mb-2">{title}</h3>
-                <p className="text-[11px] text-slate-500 leading-relaxed">{text}</p>
+                <p className="text-xs text-slate-500 leading-relaxed">{text}</p>
               </motion.div>
             ))}
           </div>
@@ -363,13 +364,19 @@ export default function Home() {
             </p>
           </motion.div>
           <motion.div {...fadeUp} className="flex flex-wrap gap-3">
-            <GoldButton to="/recherche" small>J’ai un projet</GoldButton>
-            <Link to="/acheter" className="inline-flex items-center gap-2 rounded-full border border-white/60 px-5 py-2.5 text-xs font-medium transition hover:bg-white hover:text-navy-900">
+            <GoldButton to="/recherche" small>Confier ma recherche</GoldButton>
+            <Link to="/terrains" className="inline-flex items-center gap-2 rounded-full border border-white/60 px-5 py-2.5 text-xs font-medium transition hover:bg-white hover:text-navy-900">
               Voir nos terrains <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link to="/contact" className="inline-flex items-center gap-2 rounded-full border border-white/60 px-5 py-2.5 text-xs font-medium transition hover:bg-white hover:text-navy-900">
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Nous contacter sur WhatsApp (nouvel onglet)"
+              className="inline-flex items-center gap-2 rounded-full border border-white/60 px-5 py-2.5 text-xs font-medium transition hover:bg-white hover:text-navy-900"
+            >
               <Phone className="w-4 h-4" /> Nous contacter
-            </Link>
+            </a>
           </motion.div>
         </div>
         <svg className="absolute -bottom-px left-0 block w-full h-10 md:h-14" viewBox="0 0 1440 60" preserveAspectRatio="none" aria-hidden>
@@ -381,7 +388,7 @@ export default function Home() {
             <MapPinned className="w-7 h-7 text-gold-500" />
             <div>
               <p className="font-extrabold text-xl leading-none">CA <span className="text-gold-500">IMMO</span></p>
-              <p className="text-[10px] text-white/70">Trouvez. Sécurisez. Accompagnez.</p>
+              <p className="text-xs text-white/70">Trouvez. Sécurisez. Accompagnez.</p>
             </div>
           </div>
         </div>

@@ -8,6 +8,7 @@
   --color-brand-900: #0b1e42;
   --color-brand-800: #122a59;
   --color-brand-accent: #e5ad0b; /* or CA IMMO (anciennement vert) */
+  --color-green-700: #1f7a44;
   --font-display: "Poppins", system-ui, sans-serif;
   --font-hand: "Caveat", cursive;
   --color-navy-950: #071634;
@@ -16,13 +17,18 @@
   --color-gold-400: #fcd34d;
   --color-gold-500: #f7c325;
   --color-gold-600: #e5ad0b;
+  --color-gold-700: #8a6800;
   --color-mist: #f3f6fb;
+  /* Touches « papier mat » — fonds texturés de la direction soft minimalism */
+  --color-paper: #f7f5ef;
+  --color-paper-deep: #efebe0;
 }
 
 body {
   background-color: var(--color-brand-50);
   color: var(--color-brand-900);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3, h4, h5, h6, .font-serif {
@@ -31,4 +37,104 @@ h1, h2, h3, h4, h5, h6, .font-serif {
 
 .font-display, .font-display h1, .font-display h2, .font-display h3, .font-display h4 {
   font-family: var(--font-display);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+::selection {
+  background: rgba(247, 195, 37, 0.35);
+}
+
+
+
+@layer components {
+  /* — Boutons — */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-all duration-300 select-none cursor-pointer;
+  }
+
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-gold-500 px-7 py-3.5 text-sm font-semibold text-navy-900 shadow-lg shadow-gold-500/30 transition-all duration-300 select-none cursor-pointer hover:-translate-y-0.5 hover:bg-gold-400;
+  }
+
+  .btn-navy {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-navy-900 px-7 py-3.5 text-sm font-semibold text-white transition-all duration-300 select-none cursor-pointer hover:-translate-y-0.5 hover:bg-navy-800;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-navy-900/20 px-6 py-3 text-sm font-medium text-navy-900 transition-all duration-300 select-none cursor-pointer hover:border-navy-900/45 hover:bg-white;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-medium text-navy-900/65 transition-all duration-300 select-none cursor-pointer hover:bg-navy-900/5 hover:text-navy-900;
+  }
+
+  .text-link {
+    @apply inline-flex items-center gap-1.5 text-sm font-medium text-navy-900 underline decoration-gold-500 decoration-2 underline-offset-4 transition-colors hover:text-gold-600;
+  }
+
+  /* — Surfaces — */
+  .card-soft {
+    @apply rounded-2xl bg-white shadow-lg shadow-navy-900/5;
+  }
+
+  .card-lift {
+    @apply transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_24px_60px_-32px_rgba(11,30,66,0.25)];
+  }
+
+  /* — Formulaires — */
+  .field-label {
+    @apply mb-2 block text-sm font-bold text-navy-900;
+  }
+
+  .input {
+    @apply w-full rounded-2xl border border-navy-900/40 bg-white px-5 py-3.5 text-sm font-medium text-navy-900 transition-all duration-300 placeholder:text-navy-900/45 focus:border-gold-500 focus:ring-2 focus:ring-gold-500/25;
+  }
+
+  .select {
+    @apply w-full cursor-pointer appearance-none rounded-2xl border border-navy-900/40 bg-white px-5 py-3.5 pr-10 text-sm font-medium text-navy-900 transition-all duration-300 placeholder:text-navy-900/45 focus:border-gold-500 focus:ring-2 focus:ring-gold-500/25;
+  }
+
+  .chip {
+    @apply inline-flex cursor-pointer select-none items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all duration-300;
+  }
+
+  .chip-off {
+    @apply inline-flex cursor-pointer select-none items-center gap-1.5 rounded-full border border-navy-900/25 px-3.5 py-1.5 text-xs font-semibold text-navy-900/85 transition-all duration-300 hover:border-navy-900/35 hover:bg-white;
+  }
+
+  .chip-on {
+    @apply inline-flex cursor-pointer select-none items-center gap-1.5 rounded-full bg-navy-900 px-3.5 py-1.5 text-xs font-medium text-white transition-all duration-300;
+  }
+}
+
+/* — Accessibilité : focus visible au clavier — */
+:focus-visible {
+  outline: 3px solid #0b1e42;
+  outline-offset: 2px;
+}
+.bg-navy-900 :focus-visible,
+.bg-navy-950 :focus-visible,
+.bg-brand-900 :focus-visible {
+  outline-color: #f7c325;
+}
+
+/* — Accessibilité : animations réduites — */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* — États désactivés des boutons — */
+.btn:disabled, .btn-gold:disabled, .btn-navy:disabled, .btn-outline:disabled, .btn-ghost:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }

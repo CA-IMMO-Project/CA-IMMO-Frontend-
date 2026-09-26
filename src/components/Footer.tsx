@@ -19,7 +19,7 @@ export default function Footer() {
                 href={FB_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-white/60 hover:text-brand-accent transition-colors"
+                className="text-white/60 hover:text-gold-500 transition-colors"
                 aria-label="Facebook"
               >
                 <Facebook className="w-5 h-5" />
@@ -28,50 +28,49 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="text-white font-serif text-lg tracking-wide mb-6">Navigation</h3>
+            <h3 className="text-white font-display text-lg font-semibold tracking-wide mb-6">Navigation</h3>
             <ul className="space-y-3 text-sm font-light">
-              <li><Link to="/acheter" className="hover:text-brand-accent transition-colors">Acheter</Link></li>
-              <li><Link to="/recherche" className="hover:text-brand-accent transition-colors">Rechercher un terrain</Link></li>
-              <li><Link to="/vendre" className="hover:text-brand-accent transition-colors">Vendre</Link></li>
-              <li><Link to="/realisations" className="hover:text-brand-accent transition-colors">Réalisations</Link></li>
-              <li><Link to="/about" className="hover:text-brand-accent transition-colors">À Propos</Link></li>
-              <li><Link to="/contact" className="hover:text-brand-accent transition-colors">Contact</Link></li>
+              <li><Link to="/terrains" className="hover:text-gold-500 transition-colors">Acheter un terrain</Link></li>
+              <li><Link to="/recherche" className="hover:text-gold-500 transition-colors">Recherche sur mesure</Link></li>
+              <li><Link to="/vendre" className="hover:text-gold-500 transition-colors">Vendre un terrain</Link></li>
+              <li><Link to="/realisations" className="hover:text-gold-500 transition-colors">Nos réalisations</Link></li>
+              <li><Link to="/about" className="hover:text-gold-500 transition-colors">À Propos</Link></li>
             </ul>
           </div>
 
           <div>
-            <h3 className="text-white font-serif text-lg tracking-wide mb-6">Services</h3>
+            <h3 className="text-white font-display text-lg font-semibold tracking-wide mb-6">Services</h3>
             <ul className="space-y-3 text-sm font-light">
               <li className="text-white/70">Vente de terrains</li>
+              <li className="text-white/70">Recherche sur mesure</li>
               <li className="text-white/70">Vérification de titres fonciers</li>
               <li className="text-white/70">Accompagnement juridique</li>
-              <li className="text-white/70">Bornage & prospection</li>
             </ul>
           </div>
 
           <div>
-            <h3 className="text-white font-serif text-lg tracking-wide mb-6">Contact</h3>
+            <h3 className="text-white font-display text-lg font-semibold tracking-wide mb-6">Contact</h3>
             <ul className="space-y-4 text-sm font-light">
               <li className="flex items-start">
-                <MapPin className="w-5 h-5 mr-3 text-brand-accent shrink-0" />
+                <MapPin className="w-5 h-5 mr-3 text-gold-500 shrink-0" />
                 <span>Intervention dans toute Madagascar</span>
               </li>
               <li className="flex items-center">
-                <Phone className="w-5 h-5 mr-3 text-brand-accent shrink-0" />
+                <Phone className="w-5 h-5 mr-3 text-gold-500 shrink-0" />
                 <span className="flex flex-col">
-                  <a href={PHONE_1_TEL} className="hover:text-brand-accent transition-colors">{PHONE_1}</a>
-                  <a href={PHONE_2_TEL} className="hover:text-brand-accent transition-colors">{PHONE_2}</a>
+                  <a href={PHONE_1_TEL} className="hover:text-gold-500 transition-colors">{PHONE_1}</a>
+                  <a href={PHONE_2_TEL} className="hover:text-gold-500 transition-colors">{PHONE_2}</a>
                 </span>
               </li>
               <li className="flex items-center">
-                <Facebook className="w-5 h-5 mr-3 text-brand-accent shrink-0" />
-                <a href={FB_URL} target="_blank" rel="noopener noreferrer" className="hover:text-brand-accent transition-colors">CA IMMO sur Facebook</a>
+                <Facebook className="w-5 h-5 mr-3 text-gold-500 shrink-0" />
+                <a href={FB_URL} target="_blank" rel="noopener noreferrer" className="hover:text-gold-500 transition-colors">CA IMMO sur Facebook</a>
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="border-t border-white/10 mt-16 pt-8 flex flex-col md:flex-row justify-between items-center text-xs font-light text-white/40">
+        <div className="border-t border-white/10 mt-16 pt-8 flex flex-col md:flex-row justify-between items-center text-xs font-light text-white/60">
           <p>&copy; {new Date().getFullYear()} CA IMMO. Tous droits réservés.</p>
           <p className="mt-4 md:mt-0">Chargé d'Affaire Immobilier — Madagascar</p>
         </div>
