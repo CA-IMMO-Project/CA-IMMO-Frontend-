@@ -1,18 +1,18 @@
 import { Link, NavLink } from 'react-router-dom';
-import { Home, Map, Info, Phone, CalendarCheck, Menu, X, Facebook } from 'lucide-react';
+import { Home, Map, Phone, Tag, Menu, X, Facebook, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FB_URL, PHONE_1, PHONE_1_TEL } from '../lib/contact';
+import { FB_URL, PHONE_1, PHONE_1_TEL, WHATSAPP_URL } from '../lib/contact';
+import { useAuth } from '../lib/auth';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const { user } = useAuth();
 
   const navLinks = [
     { name: 'Accueil', path: '/', icon: <Home className="w-4 h-4 mr-2" /> },
-    { name: 'Terrains', path: '/terrains', icon: <Map className="w-4 h-4 mr-2" /> },
-    { name: 'À Propos', path: '/about', icon: <Info className="w-4 h-4 mr-2" /> },
-    { name: 'Réservation', path: '/reservation', icon: <CalendarCheck className="w-4 h-4 mr-2" /> },
-    { name: 'Contact', path: '/contact', icon: <Phone className="w-4 h-4 mr-2" /> },
+    { name: 'Acheter', path: '/terrains', icon: <Map className="w-4 h-4 mr-2" /> },
+    { name: 'Vendre', path: '/vendre', icon: <Tag className="w-4 h-4 mr-2" /> },
   ];
 
   return (
@@ -44,7 +44,7 @@ export default function Navbar() {
                 />
                 <span className="ml-3 leading-none">
                   <span className="block text-xl font-extrabold text-white">CA <span className="text-gold-500">IMMO</span></span>
-                  <span className="block text-[10px] text-white/60 mt-1">Trouvez. Sécurisez. Accompagnez.</span>
+                  <span className="block text-xs text-white/60 mt-1">Trouvez. Sécurisez. Accompagnez.</span>
                 </span>
               </Link>
             </div>
@@ -67,20 +67,32 @@ export default function Navbar() {
               ))}
             </div>
 
-            <div className="hidden md:flex items-center">
+            <div className="hidden md:flex items-center gap-3">
               <Link
-                to="/contact"
+                to={user ? '/compte' : '/connexion?mode=login'}
+                className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white/80 hover:text-gold-500 transition-colors"
+              >
+                <UserRound className="w-4 h-4" /> {user ? 'Mon espace' : 'Connexion'}
+              </Link>
+              <a
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Nous contacter sur WhatsApp (nouvel onglet)"
                 className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-navy-900 bg-gold-500 rounded-full shadow-lg shadow-gold-500/30 hover:bg-gold-400 transition-colors"
               >
                 <Phone className="w-4 h-4" /> Nous contacter
-              </Link>
+              </a>
             </div>
 
             {/* Mobile menu button */}
             <div className="flex items-center md:hidden">
               <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="inline-flex items-center justify-center p-2 text-white/80 hover:text-white focus:outline-none"
+                aria-expanded={isOpen}
+                aria-controls="menu-mobile"
+                aria-label={isOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+                className="inline-flex items-center justify-center p-2 text-white/80 hover:text-white"
               >
                 {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
@@ -95,6 +107,7 @@ export default function Navbar() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
+              id="menu-mobile"
               className="md:hidden border-t border-white/10 bg-navy-900 overflow-hidden"
             >
               <div className="px-4 pt-4 pb-6 space-y-2">
@@ -110,11 +123,30 @@ export default function Navbar() {
                   </Link>
                 ))}
                 <Link
-                  to="/reservation"
+                  to={user ? '/compte' : '/connexion?mode=login'}
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center px-3 py-3 text-sm font-medium text-white/80 hover:text-gold-500"
+                >
+                  <UserRound className="w-4 h-4 mr-2" />
+                  {user ? 'Mon espace' : 'Connexion'}
+                </Link>
+                <a
+                  href={WHATSAPP_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setIsOpen(false)}
+                  aria-label="Nous contacter sur WhatsApp (nouvel onglet)"
+                  className="flex items-center px-3 py-3 text-sm font-medium text-white/80 hover:text-gold-500"
+                >
+                  <Phone className="w-4 h-4 mr-2" />
+                  Nous contacter
+                </a>
+                <Link
+                  to="/vendre"
                   onClick={() => setIsOpen(false)}
                   className="flex items-center justify-center px-3 py-3 mt-2 text-sm font-semibold text-navy-900 bg-gold-500 rounded-full hover:bg-gold-400"
                 >
-                  Réserver un terrain
+                  Déposer un terrain
                 </Link>
               </div>
             </motion.div>

@@ -3,14 +3,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Outlet, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import Lands from './pages/Lands';
+import LandDetail from './pages/LandDetail';
+import SearchRequest from './pages/SearchRequest';
 import About from './pages/About';
-import Contact from './pages/Contact';
-import Reservation from './pages/Reservation';
+import NotFound from './pages/NotFound';
+import Account from './pages/Account';
+import Auth from './pages/Auth';
+import Sell from './pages/Sell';
 import AdminLayout, { AdminLogin } from './admin/AdminLayout';
 import Dashboard from './admin/Dashboard';
 import AdminLands from './admin/AdminLands';
@@ -35,9 +39,16 @@ export default function App() {
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/terrains" element={<Lands />} />
+          <Route path="/terrains/:id" element={<LandDetail />} />
+          <Route path="/recherche" element={<SearchRequest />} />
           <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/reservation" element={<Reservation />} />
+          {/* Contact (formulaire) supprimé : « Nous contacter » ouvre WhatsApp directement */}
+          <Route path="/contact" element={<Navigate to="/" replace />} />
+          <Route path="/connexion" element={<Auth />} />
+          <Route path="/compte" element={<Account />} />
+          <Route path="/vendre" element={<Sell />} />
+          <Route path="/reservation" element={<Navigate to="/vendre" replace />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminLayout />}>
