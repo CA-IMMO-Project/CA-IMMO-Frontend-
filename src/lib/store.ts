@@ -1,23 +1,11 @@
-import { Land } from '../types';
-import { LANDS } from '../data/lands';
-import type { ContactPayload, ReservationPayload } from './api';
+import { ContactMessage, ContactPayload, Land, Reservation, ReservationPayload, RequestStatus } from '../types';
+import { LANDS } from './data/lands';
 
 // Stockage local (navigateur) en attendant un vrai backend.
 // Toutes les lectures/écritures du site et du backoffice passent par ici.
+// Les types de domaine vivent dans src/types.ts (ré-exportés ici pour comodité).
 
-export type RequestStatus = 'nouveau' | 'traité' | 'archivé';
-
-export interface Reservation extends ReservationPayload {
-  id: string;
-  createdAt: string;
-  status: RequestStatus;
-}
-
-export interface ContactMessage extends ContactPayload {
-  id: string;
-  createdAt: string;
-  status: RequestStatus;
-}
+export type { ContactMessage, ContactPayload, Reservation, ReservationPayload, RequestStatus } from '../types';
 
 const KEYS = {
   lands: 'caimmo.lands',

@@ -1,24 +1,15 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import path from 'path';
-import {defineConfig, loadEnv} from 'vite';
+import { defineConfig } from 'vite';
 
-export default defineConfig(({mode}) => {
-  const env = loadEnv(mode, '.', '');
-  return {
-    plugins: [react(), tailwindcss()],
-    define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-    },
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, '.'),
-      },
-    },
-    server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
-      hmr: process.env.DISABLE_HMR !== 'true',
-    },
-  };
+// Configuration Vite — le site est un SPA 100 % front (aucun backend local).
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  server: {
+    // HMR désactivable (DISABLE_HMR=true) pour les aperçus proxifiés.
+    hmr: process.env.DISABLE_HMR !== 'true',
+    host: '0.0.0.0',
+    // Autorise les aperçus proxifiés (sandbox / preview) en plus de localhost.
+    allowedHosts: true,
+  },
 });
