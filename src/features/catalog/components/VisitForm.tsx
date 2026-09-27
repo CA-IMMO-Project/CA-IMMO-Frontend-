@@ -7,7 +7,7 @@ import { AccountNote, AuthModal } from '../../auth/AuthModule';
 import { createReservation, nextRequestRef } from '../../../lib/dossiers';
 import type { AuthUser } from '../../../lib/auth';
 import type { Land, ReservationPayload } from '../../../types';
-import { usePendingAuth } from '../hooks/usePendingAuth';
+import { usePendingAuth } from '../../auth/usePendingAuth';
 
 export default function VisitForm({ land, onDone }: { land: Land; onDone: (ref: string) => void }) {
   const { user, guard, authModalProps } = usePendingAuth<ReservationPayload>();

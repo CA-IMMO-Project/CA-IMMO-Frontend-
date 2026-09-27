@@ -58,14 +58,15 @@ src/
 │   ├── about/About.tsx          ← src/pages/About.tsx
 │   ├── auth/
 │   │   ├── Auth.tsx             ← src/pages/Auth.tsx
-│   │   └── AuthModule.tsx       ← src/components/AuthModule.tsx
+│   │   ├── AuthModule.tsx       ← src/components/AuthModule.tsx
+│   │   └── usePendingAuth.ts    ★ hook « action après connexion » (catalog, search, sell)
 │   ├── catalog/                 # terrains : liste, fiche, carte
 │   │   ├── Lands.tsx            ← src/pages/Lands.tsx
 │   │   ├── LandDetail.tsx       ← src/pages/LandDetail.tsx (918 → 555 lignes)
 │   │   ├── LandCard.tsx         ← src/components/LandCard.tsx
 │   │   ├── components/InterestForm.tsx   ★ extrait de LandDetail
 │   │   ├── components/VisitForm.tsx      ★ extrait de LandDetail
-│   │   └── hooks/usePendingAuth.ts       ★ pattern « action après connexion »
+│   │   └── (hooks/usePendingAuth déplacé dans auth/ — voir ci-dessous)
 │   ├── search/SearchRequest.tsx ← src/pages/SearchRequest.tsx
 │   ├── sell/Sell.tsx            ← src/pages/Sell.tsx
 │   ├── realisations/Realisations.tsx ← src/pages/Realisations.tsx

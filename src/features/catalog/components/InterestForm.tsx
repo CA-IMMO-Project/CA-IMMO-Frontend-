@@ -10,7 +10,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { formatAriary } from '../../../lib/format';
 import { landReference } from '../../../lib/land';
 import type { Land, ReservationPayload } from '../../../types';
-import { usePendingAuth } from '../hooks/usePendingAuth';
+import { usePendingAuth } from '../../auth/usePendingAuth';
 
 export default function InterestForm({ land, onDone }: { land: Land; onDone: (ref: string) => void }) {
   const { user, guard, authModalProps } = usePendingAuth<ReservationPayload>();

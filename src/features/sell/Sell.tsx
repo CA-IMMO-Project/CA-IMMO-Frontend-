@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import {
@@ -20,7 +20,8 @@ import {
 } from 'lucide-react';
 import { ChoiceCards, ErrorBanner, Eyebrow, FormField, Input, PageHero, ProgressSteps, Select, Textarea, UploadZone } from '../../shared/ui';
 import { AccountNote, AuthModal } from '../auth/AuthModule';
-import { AuthUser, useAuth } from '../../lib/auth';
+import { usePendingAuth } from '../auth/usePendingAuth';
+import type { AuthUser } from '../../lib/auth';
 import { createReservation } from '../../lib/dossiers';
 import type { ReservationPayload } from '../../types';
 import MapVisual, { MapPinPos } from '../../shared/MapVisual';
@@ -40,9 +41,7 @@ function requestRef(): string {
 }
 
 export default function Sell() {
-  const { user } = useAuth();
-  const [authOpen, setAuthOpen] = useState(false);
-  const pendingRef = useRef<ReservationPayload | null>(null);
+  const { user, guard, authModalProps } = usePendingAuth<ReservationPayload>();
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
@@ -186,12 +185,7 @@ export default function Sell() {
       projectName: `${form.title} — ${form.commune || form.region}`,
       message: composeMessage(),
     };
-    if (!user) {
-      pendingRef.current = payload;
-      setAuthOpen(true);
-      return;
-    }
-    void finalize(payload, user);
+    guard(payload, finalize);
   };
 
   /* ————— Confirmation ————— */
@@ -766,14 +760,7 @@ export default function Sell() {
         </div>
       </section>
 
-      <AuthModal
-        open={authOpen}
-        onClose={() => setAuthOpen(false)}
-        onSuccess={(u) => {
-          setAuthOpen(false);
-          if (pendingRef.current) void finalize(pendingRef.current, u);
-        }}
-      />
+      <AuthModal {...authModalProps(finalize)} />
     </div>
   );
 }

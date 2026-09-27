@@ -6,8 +6,8 @@
    ========================================================================== */
 
 import { useRef, useState } from 'react';
-import { useAuth } from '../../../lib/auth';
-import type { AuthUser } from '../../../lib/auth';
+import { useAuth } from '../../lib/auth';
+import type { AuthUser } from '../../lib/auth';
 
 export function usePendingAuth<T>() {
   const { user } = useAuth();
